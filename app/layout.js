@@ -1,5 +1,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Navbar from "@/components/custom/Navbar";
+import { Fade } from "react-awesome-reveal";
+import { AuthProvider } from "@/contexts/useAuth";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,7 +25,14 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <AuthProvider>
+          <div className="h-screen">
+            <Navbar />
+            <Fade className="h-11/12">
+              {children}
+            </Fade>
+          </div>
+        </AuthProvider>
       </body>
     </html>
   );
