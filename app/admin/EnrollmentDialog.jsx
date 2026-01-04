@@ -78,7 +78,7 @@ export function EnrollmentDialog({ isOpen, onClose, group, onEnroll, currentStud
     }
 
     const handleConfirm = () => {
-        // Calcular conteos de salida para actualizar UI
+        
         const studentsMoving = studentsWithGroup.filter(s => enrollSelection.includes(s.id))
         const leavingCounts = {}
         studentsMoving.forEach(s => {

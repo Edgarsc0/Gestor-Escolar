@@ -65,7 +65,7 @@ export function GroupsView({ onViewProfile }) {
         }
         try {
             if (editingGroup) {
-                // Detectar cambio de profesor
+                
                 if (editingGroup.main_teacher_id != newTeacherId && newTeacherId) {
                     const scheduleRes = await fetch(`/api/schedules/group/${editingGroup.id}`)
                     const groupSchedule = scheduleRes.ok ? await scheduleRes.json() : []

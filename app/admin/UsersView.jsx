@@ -195,7 +195,7 @@ export function UsersView({ searchQuery, onViewProfile }) {
             ])
         }
         
-        setIsSaving(false) // performDelete will set it true again, but we need to reset or handle flow. Actually performDelete sets it true.
+        setIsSaving(false) 
         await performDelete(user)
     }
 

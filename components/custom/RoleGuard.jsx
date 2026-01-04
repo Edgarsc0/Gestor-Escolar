@@ -1,4 +1,3 @@
-// /home/edgar/Proyecto ADS/proyecto_ads/components/custom/RoleGuard.jsx
 "use client"
 
 import { useEffect, useState } from "react"
@@ -14,10 +13,8 @@ export default function RoleGuard({ children, allowedRoles }) {
     useEffect(() => {
         if (!loading) {
             if (!user) {
-                // Si no hay usuario, redirigir a login
                 router.push("/login")
             } else if (!allowedRoles.includes(user.role)) {
-                // Si el rol no coincide, redirigir al dashboard que le corresponde
                 switch (user.role) {
                     case 'admin': router.push('/admin'); break;
                     case 'teacher': router.push('/teacher'); break;
@@ -26,7 +23,6 @@ export default function RoleGuard({ children, allowedRoles }) {
                     default: router.push('/');
                 }
             } else {
-                // Si todo está bien, autorizar renderizado
                 setAuthorized(true)
             }
         }

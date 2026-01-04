@@ -16,7 +16,7 @@ export default class GroupService {
         if (!group) {
             throw new Error("Group not found");
         }
-        // Opcional: Cargar alumnos automáticamente al pedir un grupo individual
+ 
         const students = await this.repository.getStudentsByGroupId(id);
         group.students = students;
         return group;
@@ -54,7 +54,7 @@ export default class GroupService {
     }
 
     async addStudentToGroup(studentId, groupId) {
-        // Aquí podrías validar capacidad del grupo antes de insertar
+        
         return await this.repository.addStudentToGroup(studentId, groupId);
     }
 

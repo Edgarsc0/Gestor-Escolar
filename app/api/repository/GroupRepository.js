@@ -64,10 +64,10 @@ export default class GroupRepository {
         }
     }
 
-    // Métodos para gestionar alumnos en el grupo
+    
     async getStudentsByGroupId(groupId) {
         const result = await pool.query(querys.groups.getStudentsByGroupId, [groupId]);
-        return result.rows; // Retorna lista de alumnos con su asistencia
+        return result.rows; 
     }
 
     async addStudentToGroup(studentId, groupId) {
@@ -115,16 +115,16 @@ export default class GroupRepository {
         try {
             await client.query('BEGIN');
             
-            // 1. Desvincular de otros grupos (Mover)
+            
             if (studentIds.length > 0) {
-                // Elimina cualquier inscripción de estos alumnos en grupos distintos al actual
+               
                 await client.query(
                     querys.groups.transferStudentsDelete,
                     [studentIds, groupId]
                 );
             }
 
-            // 2. Inscribir en el nuevo grupo (Reutilizamos lógica de bulkEnroll)
+        
             const values = [];
             const placeholders = studentIds.map((id, i) => {
                 const offset = i * 2;

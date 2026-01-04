@@ -78,7 +78,7 @@ export default class GroupController {
         }
     };
 
-    // Métodos para gestionar alumnos
+    
     getGroupStudents = async (req, { params }) => {
         try {
             const { id } = await params; // Group ID

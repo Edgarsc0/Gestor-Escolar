@@ -20,13 +20,13 @@ export function UserProfileView({ userId, onBack }) {
     const fetchDetails = async () => {
         setLoading(true)
         try {
-            // Fetch base user info
+            
             const userRes = await fetch(`/api/users/${userId}`)
             if (!userRes.ok) throw new Error("User not found")
             const userData = await userRes.json()
             setUser(userData)
 
-            // Fetch details based on role
+            
             const promises = [fetch(`/api/personal_info/${userData.id}`).then(res => res.ok ? res.json() : null)]
 
             if (userData.role === 'student') {

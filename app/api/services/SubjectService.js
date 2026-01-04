@@ -33,7 +33,7 @@ export default class SubjectService {
 
     async delete(id, adminId) {
         const result = await this.repository.delete(id);
-        // We need the subject name for a better log, but it's already deleted.
+  
         this.logService.logActivity(adminId, `Eliminó la materia con ID ${id}.`);
         return result;
     }

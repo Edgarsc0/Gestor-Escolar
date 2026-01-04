@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollText } from "lucide-react"
 
 export default function KardexTab({ kardexData }) {
-    // Agrupar por ciclo escolar
+    
     const groupedKardex = kardexData.reduce((acc, item) => {
         if (!acc[item.school_cycle]) {
             acc[item.school_cycle] = []
@@ -13,7 +13,7 @@ export default function KardexTab({ kardexData }) {
         return acc
     }, {})
 
-    // Ordenar ciclos del más reciente al más antiguo
+    
     const cycles = Object.keys(groupedKardex).sort().reverse()
 
     return (

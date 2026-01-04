@@ -26,7 +26,6 @@ export default function ScheduleTab({ classes = [], isLoading }) {
                     <div className="overflow-x-auto">
                         <div className="min-w-[800px]">
 
-                            {/* Legend */}
                             <div className="mt-6 mb-6 pt-6 border-t border-slate-200">
                                 <h4 className="text-sm font-semibold text-slate-700 mb-3">Materias Inscritas</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
@@ -41,9 +40,7 @@ export default function ScheduleTab({ classes = [], isLoading }) {
                                 </div>
                             </div>
 
-                            {/* Schedule Grid */}
                             <div className="grid grid-cols-6 gap-2">
-                                {/* Header Row */}
                                 <div className="font-semibold text-sm text-slate-700 p-3 bg-slate-100 rounded-lg text-center">Hora</div>
 
                                 {days.map((day) => (
@@ -55,19 +52,14 @@ export default function ScheduleTab({ classes = [], isLoading }) {
                                     </div>
                                 ))}
 
-                                {/* Schedule Rows */}
                                 {timeSlots.map((time, timeIndex) => (
                                     <Fragment key={time}>
-                                        {/* Time Column */}
                                         <div className="text-xs text-slate-600 p-3 bg-slate-50 rounded-lg flex items-center justify-center font-medium">{time}</div>
 
-                                        {/* Class Cells */}
                                         {days.map((day) => {
-                                            // Normalizar formato de hora para comparación (ej. "07:00:00" -> "07:00")
                                             const [slotStart] = time.split(' - ');
 
                                             const classInfo = classes.find(c => {
-                                                // Normalizar hora de DB (ej: "8:00" -> "08:00") para asegurar coincidencia
                                                 const parts = c.start_time.split(':');
                                                 const dbStart = `${parts[0].padStart(2, '0')}:${parts[1]}`;
                                                 return c.day_of_week === day && dbStart === slotStart;

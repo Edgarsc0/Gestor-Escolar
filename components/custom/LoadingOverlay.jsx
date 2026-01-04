@@ -1,4 +1,4 @@
-// /home/edgar/Proyecto ADS/proyecto_ads/components/custom/LoadingOverlay.jsx
+
 "use client"
 import { Loader2 } from "lucide-react"
 

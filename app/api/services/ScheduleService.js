@@ -12,7 +12,7 @@ export default class ScheduleService {
     }
 
     async createSchedule(data, adminId) {
-        // Validaciones básicas - Updated to check for subject_id instead of subject
+    
         if (!data.group_id || !data.day_of_week || !data.start_time || !data.end_time || !data.subject_id) {
             throw new Error("Missing required fields");
         }

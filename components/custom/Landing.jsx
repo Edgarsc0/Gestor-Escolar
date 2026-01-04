@@ -47,7 +47,7 @@ export default function Landing() {
     };
 
     useEffect(() => {
-        const slideInterval = setInterval(nextSlide, 5000); // Cambia de slide cada 5 segundos
+        const slideInterval = setInterval(nextSlide, 5000); 
         return () => clearInterval(slideInterval);
     }, [currentIndex]);
 

@@ -19,7 +19,7 @@ export default class UploadService {
 
         for (const row of rows) {
             try {
-                // Create or find tutor
+                
                 let tutor = await this.userRepository.getUserByAnyEmail(row.tutor_email);
                 if (!tutor) {
                     const tutorPassword = await bcrypt.hash("temporal123", 10);
@@ -34,7 +34,7 @@ export default class UploadService {
                     tutorsCreated++;
                 }
 
-                // Create student
+                
                 const studentPassword = await bcrypt.hash("temporal123", 10);
                 const student = await this.userRepository.createUser({
                     full_name: row.student_name,
@@ -46,7 +46,7 @@ export default class UploadService {
                 });
                 studentsCreated++;
 
-                // Create relationship
+                
                 await this.userRelationshipRepository.create({ student_id: student.id, tutor_id: tutor.id, relationship_type: row.relation });
                 relationshipsCreated++;
             } catch (error) {

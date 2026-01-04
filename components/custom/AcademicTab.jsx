@@ -6,7 +6,6 @@ import { CalendarDays, BookOpen } from "lucide-react"
 export default function AcademicTab({ subjects, period }) {
     return (
         <div className="space-y-6">
-            {/* Period Info */}
             <Card className="bg-gradient-to-r from-blue-50 to-white border-blue-100">
                 <CardContent className="flex items-center gap-4 p-6">
                     <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Layers, ChevronDown, ChevronUp, Save, Loader2, CalendarDays, BookCopy, FileText, Search, AlertTriangle } from "lucide-react"
-import TutorInformation from "./TutorInformation" // Reusing this component
+import TutorInformation from "./TutorInformation" 
 import { SuccessModal } from "./SuccessDialog"
 import { LoadingOverlay } from "./LoadingOverlay"
 import { Badge } from "../ui/badge"
@@ -106,7 +106,6 @@ export default function TeacherMain() {
     
     const [isSavingGrades, setIsSavingGrades] = useState(false);
 
-    // State for grading tab
     const [selectedGroupForGrading, setSelectedGroupForGrading] = useState(null);
     const [subjectsForGrading, setSubjectsForGrading] = useState([]);
     const [selectedSubjectForGrading, setSelectedSubjectForGrading] = useState(null);
@@ -114,7 +113,6 @@ export default function TeacherMain() {
     const [studentsForGrading, setStudentsForGrading] = useState([]);
     const [studentSearchQuery, setStudentSearchQuery] = useState("");
 
-    // State for modals and feedback
     const [showSuccessDialog, setShowSuccessDialog] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
     const [errorDialog, setErrorDialog] = useState({ isOpen: false, title: "", description: "" });
@@ -139,7 +137,7 @@ export default function TeacherMain() {
 
                 if (groupsRes.ok) {
                     const groupsData = await groupsRes.json();
-                    // Fetch students for each group
+                    
                     const groupsWithStudents = await Promise.all(groupsData.map(async (group) => {
                         const studentsRes = await fetch(`/api/groups/${group.id}/students`);
                         const students = studentsRes.ok ? await studentsRes.json() : [];
@@ -164,20 +162,18 @@ export default function TeacherMain() {
     }, [user]);
 
     useEffect(() => {
-        // Get all unique subjects the teacher imparts from their schedule
         const uniqueSubjects = schedule.reduce((acc, current) => {
             if (!acc.find(item => item.subject_id === current.subject_id)) {
                 acc.push({ 
                     subject_id: current.subject_id, 
                     subject_name: current.subject_name,
-                    // Find all groups for this subject
                     groups: schedule
                         .filter(s => s.subject_id === current.subject_id)
                         .map(s => {
                             const fullGroup = groups.find(g => g.id === s.group_id);
                             return { id: s.group_id, name: s.group_name, level_name: fullGroup?.level_name };
                         })
-                        .filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i) // unique groups
+                        .filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i) 
                 });
             }
             return acc;
@@ -231,7 +227,6 @@ export default function TeacherMain() {
 
             const updatedStudent = { ...student, [dbKey]: finalValue };
 
-            // Check if all three partials are valid numbers
             const p1 = parseFloat(updatedStudent.partial_1);
             const p2 = parseFloat(updatedStudent.partial_2);
             const p3 = parseFloat(updatedStudent.partial_3);
@@ -265,9 +260,9 @@ export default function TeacherMain() {
         await fetch('/api/grades', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         setIsSavingGrades(false);
         setShowSuccessDialog(true);
-        setTimeout(() => {
+        setTimeout(() => { 
             setShowSuccessDialog(false);
-        }, 2000); // Cierra el modal después de 2 segundos
+        }, 2000); 
     };
 
     const handleOpenIncidentDialog = (student) => {
@@ -341,7 +336,7 @@ export default function TeacherMain() {
             head: [tableColumn],
             body: tableRows,
             theme: 'grid',
-            headStyles: { fillColor: [37, 99, 235], textColor: 255 }, // Blue-600 matches UI
+            headStyles: { fillColor: [37, 99, 235], textColor: 255 }, 
         });
 
         doc.save(`Reporte_${subject.subject_name.replace(/\s+/g, '_')}_${group.name}.pdf`);
@@ -389,7 +384,7 @@ export default function TeacherMain() {
     const handleCardClick = (subjectId, groupId) => {
         const cardKey = `${subjectId}-${groupId}`;
         if (expandedGradeCard === cardKey) {
-            setExpandedGradeCard(null); // Collapse if already open
+            setExpandedGradeCard(null); 
             setStudentSearchQuery("");
         } else {
             setSelectedGroupForGrading({ value: groupId });
@@ -413,7 +408,6 @@ export default function TeacherMain() {
                         <TabsTrigger value="profile">Mi Perfil</TabsTrigger>
                     </TabsList>
 
-                    {/* My Groups Tab */}
                     <TabsContent value="groups" className="mt-6">
                         <Card>
                             <CardHeader>
@@ -484,7 +478,6 @@ export default function TeacherMain() {
                         </Card>
                     </TabsContent>
 
-                    {/* My Schedule Tab */}
                     <TabsContent value="schedule" className="mt-6">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between">
@@ -506,7 +499,6 @@ export default function TeacherMain() {
                         </Card>
                     </TabsContent>
 
-                    {/* Grades Tab */}
                     <TabsContent value="grades" className="mt-6">
                         <Card>
                             <CardHeader>
@@ -640,7 +632,6 @@ export default function TeacherMain() {
                         </Card>
                     </TabsContent>
 
-                    {/* Incidents Tab */}
                     <TabsContent value="incidents" className="mt-6">
                         <Card>
                             <CardHeader>
@@ -694,7 +685,6 @@ export default function TeacherMain() {
                         </Card>
                     </TabsContent>
 
-                    {/* Profile Tab */}
                     <TabsContent value="profile" className="mt-6">
                         <TutorInformation />
                     </TabsContent>

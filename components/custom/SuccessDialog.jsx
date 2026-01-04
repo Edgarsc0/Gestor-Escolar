@@ -1,4 +1,4 @@
-// /home/edgar/Proyecto ADS/proyecto_ads/components/custom/SuccessModal.jsx
+
 "use client"
 
 import { CheckCircle } from "lucide-react"

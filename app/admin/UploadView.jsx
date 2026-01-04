@@ -48,8 +48,7 @@ export function UploadView() {
 
     const parseCSV = (text) => {
         const lines = text.split('\n').filter(l => l.trim())
-        // Asumimos que la primera línea son los encabezados y la saltamos
-        // Formato esperado: Nombre Alumno, Fecha Nacimiento Alumno, Email Alumno, Nombre Tutor, Fecha Nacimiento Tutor, Email Tutor, Parentesco
+       
         return lines.slice(1).map((line, index) => {
             const cols = line.split(',').map(c => c.trim())
             const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)

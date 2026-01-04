@@ -1,4 +1,4 @@
-// app/api/services/UserService.js
+
 import UserRepository from "../repository/UserRepository";
 import PersonalInfoRepository from "../repository/PersonalInfoRepository";
 import bcrypt from "bcrypt";
@@ -26,36 +26,36 @@ export default class UserService {
     }
 
     async createUser(userData, adminId) {
-        // Validar campos requeridos
+        
         if (!userData.full_name || !userData.role) {
             throw new Error("Full name and role are required");
         }
 
-        // Validar si el email ya existe (solo si se proporciona email)
+        
         if (userData.email) {
             const existingUser = await this.repository.getUserByEmail(userData.email);
             if (existingUser) {
                 throw new Error("Email already registered");
             }
         } else {
-            // Asegurar que sea null si viene vacío para evitar errores de unique constraint con strings vacíos
+          
             userData.email = null;
         }
 
-        // Hashear contraseña (o asignar una por defecto si no viene)
+   
         const plainPassword = userData.password || "temporal123";
         const saltRounds = 10;
         userData.password_hash = await bcrypt.hash(plainPassword, saltRounds);
 
-        // Establecer estado por defecto
+      
         userData.status = userData.status || 'active';
 
-        // Separar personal_email para insertarlo solo en personal_info
+      
         const { personal_email, ...userFields } = userData;
         const newUser = await this.repository.createUser(userFields);
 
         if (personal_email) {
-            // Guardar en la nueva tabla personal_info
+            
             await this.personalInfoRepository.create({
                 user_id: newUser.id,
                 personal_email: personal_email
@@ -74,7 +74,7 @@ export default class UserService {
             throw new Error("User not found");
         }
 
-        // Si se actualiza el email, verificar duplicados
+        
         if (userData.email && userData.email !== existingUser.email) {
             const emailCheck = await this.repository.getUserByEmail(userData.email);
             if (emailCheck) {
@@ -82,7 +82,7 @@ export default class UserService {
             }
         }
 
-        // Actualizar datos básicos
+        
         const updatedUser = await this.repository.updateUser(id, {
             full_name: userData.full_name || existingUser.full_name,
             birth_date: userData.birth_date || existingUser.birth_date,
@@ -90,7 +90,7 @@ export default class UserService {
             status: userData.status || existingUser.status
         });
 
-        // Si viene password, actualizarlo aparte
+        
         if (userData.password) {
             const saltRounds = 10;
             const hash = await bcrypt.hash(userData.password, saltRounds);
@@ -132,7 +132,7 @@ export default class UserService {
     }
 
     async sendCredentialsEmail(to, user, password) {
-        // Configuración del transporte (Asegúrate de tener estas variables en tu .env)
+  
         const transporter = nodemailer.createTransport({
             service: 'gmail', // O tu proveedor SMTP preferido
             auth: {
@@ -186,7 +186,7 @@ export default class UserService {
             });
         } catch (error) {
             console.error("Error enviando correo de credenciales:", error);
-            // No lanzamos el error para no interrumpir el flujo de creación si falla el correo
+ 
         }
     }
     async changePassword(userId, currentPassword, newPassword) {
@@ -208,18 +208,18 @@ export default class UserService {
     async requestPasswordReset(email) {
         const user = await this.repository.getUserByAnyEmail(email);
         if (!user) {
-            // No revelamos si el usuario existe o no por seguridad
+            
             return;
         }
 
-        // Generar Token (1 hora de validez)
+        
         const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'secret_key_change_me');
         const token = await new SignJWT({ id: user.id, email: user.email })
             .setProtectedHeader({ alg: 'HS256' })
             .setExpirationTime('1h')
             .sign(secret);
 
-        // Enviar Correo
+        
         const resetLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset_password?token=${token}`;
         await this.sendPasswordResetEmail(email, user.full_name, resetLink);
     }

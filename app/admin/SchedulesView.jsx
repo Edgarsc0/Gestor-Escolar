@@ -40,7 +40,7 @@ export function SchedulesView() {
                     const res = await fetch(`/api/schedules/group/${selectedGroup.id}`)
                     if (res.ok) {
                         const data = await res.json()
-                        // Mapeamos los datos del backend al formato que usa la vista
+                      
                         const formatted = data.map(s => ({
                             id: s.id,
                             day: s.day_of_week,
@@ -130,7 +130,7 @@ export function SchedulesView() {
     const handleSaveSchedule = async () => {
         if (!editingSchedule.time || !editingSchedule.subject_id || !editingSchedule.teacher_id) return
 
-        // Validar traslape de horario
+        
         const hasOverlap = groupSchedule.some(s =>
             s.day === editingSchedule.day &&
             s.time === editingSchedule.time &&

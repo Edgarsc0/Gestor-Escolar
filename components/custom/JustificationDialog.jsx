@@ -24,17 +24,16 @@ export default function JustificationDialog({ incident, open, onOpenChange, onSu
 
     const handleSubmit = async () => {
         if (!reason.trim()) {
-            // Maybe show an error
+            
             return;
         }
         setIsSaving(true)
         try {
             let evidenceUrls = []
 
-            // Subida a Cloudinary
+            
             if (evidenceFiles.length > 0) {
-                // TODO: Reemplaza con tus credenciales de Cloudinary
-                // Configuración: Settings -> Upload -> Upload presets -> Add upload preset (Mode: Unsigned)
+               
                 const CLOUD_NAME = "dcj0lp5nc" 
                 const UPLOAD_PRESET = "Gestor Escolar" 
 
@@ -79,7 +78,7 @@ export default function JustificationDialog({ incident, open, onOpenChange, onSu
             if (res.ok) {
                 setShowSuccess(true)
             } else {
-                // Handle error
+                
                 console.error("Failed to submit justification")
             }
         } catch (error) {
@@ -92,7 +91,7 @@ export default function JustificationDialog({ incident, open, onOpenChange, onSu
     const handleSuccessClose = (isOpen) => {
         setShowSuccess(isOpen)
         if (!isOpen) {
-            onSuccess() // Refresh the incidents list
+            onSuccess() 
             onOpenChange(false)
             setReason("")
             setEvidenceFiles([])
@@ -130,7 +129,7 @@ export default function JustificationDialog({ incident, open, onOpenChange, onSu
                                     if (e.target.files && e.target.files.length > 0) {
                                         setEvidenceFiles(prev => [...prev, ...Array.from(e.target.files)])
                                     }
-                                    e.target.value = "" // Reset para permitir seleccionar el mismo archivo si se desea
+                                    e.target.value = "" 
                                 }} 
                                 accept="image/*,application/pdf"
                                 multiple

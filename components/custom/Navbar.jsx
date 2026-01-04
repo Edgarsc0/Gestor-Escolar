@@ -6,7 +6,6 @@ import { useAuth } from '@/contexts/useAuth';
 import Link from 'next/link';
 import { LogOut } from 'lucide-react';
 
-// 1. Estructura de datos para los menús
 const menuLinks = {
     Administrador: [
         { href: "/admin?view=dashboard", text: "Dashboard" },
@@ -35,23 +34,19 @@ const menuLinks = {
     ],
 };
 
-// 2. Componente NavLink mejorado usando next/link
 const NavLink = ({ href, children }) => (
     <Link href={href} className="px-3 py-2 rounded-md text-md font-medium text-gray-200 hover:bg-sky-700 hover:text-white transition-colors duration-200">
         {children}
     </Link>
 );
 
-// 3. Componente para renderizar el menú dinámicamente
 const UserMenu = ({ userType, grado, params }) => {
     let links = menuLinks[userType] || [];
 
-    // Lógica especial para Estudiantes de Preparatoria/Universidad
     if (userType === "Estudiante" && ["Preparatoria", "Universidad"].includes(grado)) {
         links = [...links, { href: "/documents", text: "Documentos" }];
     }
 
-    // Lógica especial para Tutores cuando están viendo a un hijo
     if (userType === "Tutor" && params?.son) {
         links = [
             { href: "/padre_tutor", text: "Mis Hijos" },

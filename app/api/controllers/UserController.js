@@ -27,7 +27,7 @@ export default class UserController {
             const role = searchParams.get('role');
             const users = await this.service.getAllUsers(role);
             
-            // Removemos el hash del password antes de enviarlo al cliente
+            
             const sanitizedUsers = users.map(user => {
                 const { password_hash, ...rest } = user;
                 return rest;

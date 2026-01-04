@@ -33,32 +33,27 @@ export default function TutorInformation({ userId, userName }) {
     const [showSuccessModal, setShowSuccessModal] = useState(false)
     const [successMessage, setSuccessMessage] = useState("")
 
-    // Read-only identity data
     const [identityData, setIdentityData] = useState({
         fullName: "",
     })
 
-    // Editable contact information
     const [contactInfo, setContactInfo] = useState({
         personal_email: "",
         cell_phone: "",
         additional_phone: "",
     })
 
-    // Editable address information
     const [addressInfo, setAddressInfo] = useState({
         street_address: "",
         neighborhood: "",
         postal_code: "",
     })
 
-    // Editable medical information
     const [medicalInfo, setMedicalInfo] = useState({
         blood_type: "",
         allergies: "",
     })
 
-    // Password change state
     const [passwordData, setPasswordData] = useState({
         currentPassword: "",
         newPassword: "",
@@ -192,7 +187,6 @@ export default function TutorInformation({ userId, userName }) {
             {(isLoading || isSaving) && <LoadingOverlay message={isSaving ? "Guardando cambios..." : "Cargando información..."} />}
             
             <div className="max-w-4xl mx-auto space-y-6">
-                {/* Page Header */}
                 <div className="space-y-1">
                     <h1 className="text-2xl font-bold text-slate-900">
                         {isOwnProfile ? "Mi Perfil y Datos de Contacto" : "Perfil del Alumno"}
@@ -202,7 +196,6 @@ export default function TutorInformation({ userId, userName }) {
                     </p>
                 </div>
 
-                {/* Section 1: Identity Data (Read-only) */}
                 <Card className="border-slate-200 shadow-sm bg-white">
                     <CardHeader className="border-b border-slate-100 pb-4">
                         <div className="flex items-center gap-3">
@@ -232,7 +225,6 @@ export default function TutorInformation({ userId, userName }) {
                     </CardContent>
                 </Card>
 
-                {/* Section 2: Contact Information (Editable) */}
                 <Card className="border-slate-200 shadow-sm bg-white">
                     <CardHeader className="border-b border-slate-100 pb-4">
                         <div className="flex items-center gap-3">
@@ -293,7 +285,6 @@ export default function TutorInformation({ userId, userName }) {
                     </CardContent>
                 </Card>
 
-                {/* Section 3: Address Information (Editable) */}
                 <Card className="border-slate-200 shadow-sm bg-white">
                     <CardHeader className="border-b border-slate-100 pb-4">
                         <div className="flex items-center gap-3">
@@ -341,7 +332,6 @@ export default function TutorInformation({ userId, userName }) {
                     </CardContent>
                 </Card>
 
-                {/* Section 4: Medical Information (Editable) */}
                 <Card className="border-slate-200 shadow-sm bg-white">
                     <CardHeader className="border-b border-slate-100 pb-4">
                         <div className="flex items-center gap-3">
@@ -379,7 +369,6 @@ export default function TutorInformation({ userId, userName }) {
                     </CardContent>
                 </Card>
 
-                {/* Section 5: Security (Password Change) */}
                 {isOwnProfile && (
                 <Card className="border-slate-200 shadow-sm bg-white">
                     <CardHeader className="border-b border-slate-100 pb-4">
@@ -476,7 +465,6 @@ export default function TutorInformation({ userId, userName }) {
                 </Card>
                 )}
 
-                {/* Save Action */}
                 <div className="flex justify-end pt-4 pb-10">
                     <Button
                         size="lg"

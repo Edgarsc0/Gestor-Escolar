@@ -32,12 +32,12 @@ export default function TutorMain() {
                     const mappedChildren = data.map((rel, index) => ({
                         id: rel.student_id,
                         name: rel.student_name,
-                        grade: "Nivel General", // Placeholder temporal
+                        grade: "Nivel General", 
                         avatar: "/placeholder.svg",
                         initials: rel.student_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase(),
-                        attendance: "100%", // KPI Placeholder
-                        avgGrade: "10.0",   // KPI Placeholder
-                        subjects: 5,        // KPI Placeholder
+                        attendance: "100%", 
+                        avgGrade: "10.0",   
+                        subjects: 5,        
                         color: colors[index % colors.length],
                     }))
                     setChildren(mappedChildren)
@@ -60,7 +60,6 @@ export default function TutorMain() {
         <div className="min-h-screen bg-gradient-to-br from-muted/30 to-background mt-10">
             {isLoading && <LoadingOverlay message="Cargando alumnos..." />}
             
-            {/* Header */}
             <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex h-16 items-center justify-between">
@@ -84,7 +83,6 @@ export default function TutorMain() {
                 </div>
             </header>
 
-            {/* Main Content */}
             <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
                 <div className="space-y-8">
                     <div className="text-center space-y-2">

@@ -9,12 +9,12 @@ export default class GradeService {
 
     getCurrentSchoolCycle() {
         const now = new Date();
-        const currentMonth = now.getMonth() + 1; // Enero es 0
+        const currentMonth = now.getMonth() + 1; 
         const currentYear = now.getFullYear();
         
-        if (currentMonth >= 8) { // Agosto o después
+        if (currentMonth >= 8) { 
             return `${currentYear}-${currentYear + 1}`;
-        } else { // Antes de Agosto
+        } else { 
             return `${currentYear - 1}-${currentYear}`;
         }
     }
@@ -32,7 +32,7 @@ export default class GradeService {
         });
         const results = await Promise.all(promises);
         if (gradesData.length > 0) {
-            // Assuming the user ID is not available, logging as system.
+            
             this.logService.logActivity(userId, `Guardó/actualizó ${gradesData.length} calificaciones para la materia ID ${gradesData[0].subject_id} en el grupo ID ${gradesData[0].group_id}.`);
         }
         return results;

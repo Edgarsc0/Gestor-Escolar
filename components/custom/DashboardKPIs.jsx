@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { GraduationCap, AlertTriangle, Clock } from "lucide-react"
 
-// Helper function to convert "HH:MM:SS" to minutes from midnight
+
 const timeToMinutes = (timeStr) => {
     if (!timeStr) return 0;
     const [hours, minutes] = timeStr.split(':').map(Number);
@@ -16,7 +16,7 @@ export default function DashboardKPIs({ subjects = [], scheduleData = [], incide
     const [average, setAverage] = useState(null);
     const [nextClass, setNextClass] = useState(null);
 
-    // Calculate Average Grade
+    
     useEffect(() => {
         const gradedSubjects = subjects.filter(s => s.final != null && !isNaN(s.final));
         if (gradedSubjects.length > 0) {
@@ -27,7 +27,7 @@ export default function DashboardKPIs({ subjects = [], scheduleData = [], incide
         }
     }, [subjects]);
 
-    // Find Next Class
+    
     useEffect(() => {
         if (scheduleData.length === 0) {
             setNextClass(null);
@@ -40,7 +40,7 @@ export default function DashboardKPIs({ subjects = [], scheduleData = [], incide
         const currentDayName = daysOfWeek[now.getDay()];
         const currentTimeInMinutes = now.getHours() * 60 + now.getMinutes();
 
-        // 1. Find next class for today
+        
         const todayClasses = scheduleData
             .filter(c => c.day_of_week === currentDayName)
             .sort((a, b) => timeToMinutes(a.start_time) - timeToMinutes(b.start_time));
@@ -52,7 +52,7 @@ export default function DashboardKPIs({ subjects = [], scheduleData = [], incide
             return;
         }
 
-        // 2. If no more classes today, find first class of the next available day
+        
         const currentDayIndex = schoolDays.indexOf(currentDayName);
         for (let i = 1; i <= schoolDays.length; i++) {
             const nextDayIndex = (currentDayIndex + i) % schoolDays.length;
@@ -68,7 +68,7 @@ export default function DashboardKPIs({ subjects = [], scheduleData = [], incide
             }
         }
 
-        // 3. No upcoming classes found
+        
         setNextClass(null);
 
     }, [scheduleData]);
