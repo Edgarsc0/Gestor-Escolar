@@ -1,25 +1,27 @@
 
 'use client';
 import { useState } from 'react';
+import { useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/useAuth';
 import Link from 'next/link';
+import { LogOut } from 'lucide-react';
 
 // 1. Estructura de datos para los menús
 const menuLinks = {
     Administrador: [
-        { href: "/dashboard", text: "Dashboard" },
-        { href: "/users", text: "Usuarios" },
-        { href: "/academic", text: "Académica" },
-        { href: "/calendar", text: "Calendario Escolar" },
-        { href: "/sanctions", text: "Sanciones y bajas" },
-        { href: "/reports", text: "Reportes" },
+        { href: "/admin?view=dashboard", text: "Dashboard" },
+        { href: "/admin?view=users", text: "Usuarios" },
+        { href: "/admin?view=groups", text: "Grupos" },
+        { href: "/admin?view=schedules", text: "Horarios" },
+        { href: "/admin?view=justifications", text: "Solicitudes" },
+        { href: "/admin?view=upload", text: "Carga Masiva" },
     ],
     Docente: [
-        { href: "/home", text: "Inicio" },
-        { href: "/groups", text: "Mis grupos" },
-        { href: "/grades", text: "Calificaciones" },
-        { href: "/incidents", text: "Incidencias" },
-        { href: "/schedule", text: "Horario" },
+        { href: "/teacher?view=groups", text: "Mis grupos" },
+        { href: "/teacher?view=grades", text: "Calificaciones" },
+        { href: "/teacher?view=schedule", text: "Horario" },
+        { href: "/teacher?view=incidents", text: "Incidencias" },
+        { href: "/teacher?view=profile", text: "Mi Perfil" },
     ],
     Estudiante: [
         { href: "/home", text: "Inicio" },
@@ -27,9 +29,9 @@ const menuLinks = {
         { href: "/schedule", text: "Horario" },
         { href: "/re-enrollment", text: "Reinscripción" },
     ],
-    "Padre/Tutor": [
-        { href: "/home", text: "Inicio" },
-        { href: "/my-children", text: "Mis hijos" },
+    Tutor: [
+        { href: "/", text: "Inicio" },
+        { href: "/padre_tutor", text: "Mis hijos" },
     ],
 };
 
@@ -41,12 +43,23 @@ const NavLink = ({ href, children }) => (
 );
 
 // 3. Componente para renderizar el menú dinámicamente
-const UserMenu = ({ userType, grado }) => {
+const UserMenu = ({ userType, grado, params }) => {
     let links = menuLinks[userType] || [];
 
     // Lógica especial para Estudiantes de Preparatoria/Universidad
     if (userType === "Estudiante" && ["Preparatoria", "Universidad"].includes(grado)) {
         links = [...links, { href: "/documents", text: "Documentos" }];
+    }
+
+    // Lógica especial para Tutores cuando están viendo a un hijo
+    if (userType === "Tutor" && params?.son) {
+        links = [
+            { href: "/padre_tutor", text: "Mis Hijos" },
+            { href: `/padre_tutor/${params.son}?view=academic`, text: "Académico" },
+            { href: `/padre_tutor/${params.son}?view=schedule`, text: "Horario" },
+            { href: `/padre_tutor/${params.son}?view=incidents`, text: "Incidencias" },
+            { href: `/padre_tutor/${params.son}?view=kardex`, text: "Kardex" },
+        ];
     }
 
     return links.map((link) => (
@@ -57,7 +70,8 @@ const UserMenu = ({ userType, grado }) => {
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const { userType, isLoggedIn, grado } = useAuth();
+    const { userType, isLoggedIn, grado, logout } = useAuth();
+    const params = useParams();
 
     return (
         <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 h-1/12">
@@ -96,15 +110,20 @@ export default function Navbar() {
                 <div className={`w-full flex-grow lg:flex lg:items-center lg:w-auto ${isMenuOpen ? 'block' : 'hidden'}`}>
                     <div className="text-sm lg:flex-grow lg:text-right mt-4 lg:mt-0">
                         {isLoggedIn ? (
-                            <UserMenu userType={userType} grado={grado} />
+                            <UserMenu userType={userType} grado={grado} params={params} />
                         ) : (
                             <NavLink href="/">Inicio</NavLink>
                         )}
                     </div>
-                    <div className="mt-4 lg:mt-0 lg:ml-4">
+                    <div className="mt-4 lg:mt-0 lg:ml-4 flex flex-col lg:flex-row gap-2 items-center">
                         <a href={isLoggedIn ? "/profile" : "/login"} className="inline-block text-base px-4 py-2 leading-none border rounded text-white border-white hover:border-transparent hover:text-blue-950 hover:bg-white transition-colors duration-200 lg:bg-sky-600 lg:hover:bg-sky-700 lg:border-transparent lg:hover:text-white lg:font-bold lg:hover:scale-105 lg:transition-transform lg:duration-300 lg:ease-in-out">
                             {isLoggedIn ? "Mi Perfil" : "Iniciar Sesión"}
                         </a>
+                        {isLoggedIn && (
+                            <button onClick={logout} className="p-2 rounded-full text-gray-200 hover:text-white hover:bg-white/10 transition-all duration-200" title="Cerrar Sesión">
+                                <LogOut className="h-5 w-5" />
+                            </button>
+                        )}
                     </div>
                 </div>
             </nav>

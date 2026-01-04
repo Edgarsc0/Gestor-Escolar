@@ -7,4 +7,4 @@ const pool = new pg.Pool({
     }
 });
 
-export { pool };
+export default pool;

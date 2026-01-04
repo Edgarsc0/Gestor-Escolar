@@ -1,23 +1,19 @@
 import { Fragment } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
-export default function ScheduleTab({ schedule }) {
-    const getSubjectColor = (subject) => {
-        if (subject === "Receso") return "bg-slate-200 text-slate-700"
-        const colors = {
-            Matemáticas: "bg-blue-100 text-blue-700 border-l-4 border-l-blue-500",
-            Español: "bg-emerald-100 text-emerald-700 border-l-4 border-l-emerald-500",
-            Ciencias: "bg-purple-100 text-purple-700 border-l-4 border-l-purple-500",
-            Historia: "bg-amber-100 text-amber-700 border-l-4 border-l-amber-500",
-            Inglés: "bg-rose-100 text-rose-700 border-l-4 border-l-rose-500",
-            "Ed. Física": "bg-green-100 text-green-700 border-l-4 border-l-green-500",
-            Arte: "bg-pink-100 text-pink-700 border-l-4 border-l-pink-500",
-            Música: "bg-indigo-100 text-indigo-700 border-l-4 border-l-indigo-500",
-            Computación: "bg-cyan-100 text-cyan-700 border-l-4 border-l-cyan-500",
-            Biblioteca: "bg-orange-100 text-orange-700 border-l-4 border-l-orange-500",
-        }
-        return colors[subject] || "bg-slate-100 text-slate-700 border-l-4 border-l-slate-500"
-    }
+export default function ScheduleTab({ classes = [], isLoading }) {
+    const timeSlots = [
+        "07:00 - 08:00",
+        "08:00 - 09:00",
+        "09:00 - 10:00",
+        "10:00 - 11:00",
+        "11:00 - 12:00",
+        "12:00 - 13:00",
+        "13:00 - 14:00"
+    ]
+    const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"]
+
+    console.log(classes)
 
     return (
         <Card>
@@ -26,83 +22,87 @@ export default function ScheduleTab({ schedule }) {
                 <CardDescription>Horario semanal completo del alumno</CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="overflow-x-auto">
-                    <div className="min-w-[800px]">
-                        {/* Schedule Grid */}
-                        <div className="grid grid-cols-6 gap-2">
-                            {/* Header Row */}
-                            <div className="font-semibold text-sm text-slate-700 p-3 bg-slate-100 rounded-lg text-center">
-                                Hora
-                            </div>
-                            {schedule.days.map((day) => (
-                                <div
-                                    key={day}
-                                    className="font-semibold text-sm text-slate-700 p-3 bg-slate-100 rounded-lg text-center"
-                                >
-                                    {day}
+                
+                    <div className="overflow-x-auto">
+                        <div className="min-w-[800px]">
+
+                            {/* Legend */}
+                            <div className="mt-6 mb-6 pt-6 border-t border-slate-200">
+                                <h4 className="text-sm font-semibold text-slate-700 mb-3">Materias Inscritas</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                                    {[...new Set(classes.map(c => c.subject_name))].map((subject) => (
+                                        <div key={subject} className={`p-2 rounded text-xs font-medium ${subject === "Receso" ? "bg-slate-200 text-slate-700" : "bg-blue-50 text-blue-900 border-l-4 border-l-blue-500"} truncate`}>
+                                            {subject || "Sin nombre"}
+                                        </div>
+                                    ))}
+                                    {classes.length === 0 && (
+                                        <p className="text-xs text-slate-400 col-span-5">No hay materias registradas en el horario.</p>
+                                    )}
                                 </div>
-                            ))}
+                            </div>
 
-                            {/* Schedule Rows */}
-                            {schedule.timeSlots.map((time, timeIndex) => (
-                                <Fragment key={time}>
-                                    {/* Time Column */}
+                            {/* Schedule Grid */}
+                            <div className="grid grid-cols-6 gap-2">
+                                {/* Header Row */}
+                                <div className="font-semibold text-sm text-slate-700 p-3 bg-slate-100 rounded-lg text-center">Hora</div>
+
+                                {days.map((day) => (
                                     <div
-                                        className="text-xs text-slate-600 p-3 bg-slate-50 rounded-lg flex items-center justify-center font-medium"
+                                        key={day}
+                                        className="font-semibold text-sm text-slate-700 p-3 bg-slate-100 rounded-lg text-center"
                                     >
-                                        {time}
-                                    </div>
-                                    {/* Class Cells */}
-                                    {schedule.days.map((day) => {
-                                        const classInfo = schedule.classes[day][timeIndex]
-                                        const isBreak = classInfo.subject === "Receso"
-
-                                        return (
-                                            <div
-                                                key={`${day}-${timeIndex}`}
-                                                className={`p-3 rounded-lg ${getSubjectColor(classInfo.subject)} ${isBreak ? "flex items-center justify-center" : ""
-                                                    }`}
-                                            >
-                                                {isBreak ? (
-                                                    <span className="text-sm font-medium">☕ Receso</span>
-                                                ) : (
-                                                    <>
-                                                        <div className="font-semibold text-sm mb-1">{classInfo.subject}</div>
-                                                        <div className="text-xs opacity-90">{classInfo.teacher}</div>
-                                                        <div className="text-xs opacity-75 mt-1">📍 {classInfo.room}</div>
-                                                    </>
-                                                )}
-                                            </div>
-                                        )
-                                    })}
-                                </Fragment>
-                            ))}
-                        </div>
-
-                        {/* Legend */}
-                        <div className="mt-6 pt-6 border-t border-slate-200">
-                            <h4 className="text-sm font-semibold text-slate-700 mb-3">Leyenda de Materias</h4>
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                                {[
-                                    "Matemáticas",
-                                    "Español",
-                                    "Ciencias",
-                                    "Historia",
-                                    "Inglés",
-                                    "Ed. Física",
-                                    "Arte",
-                                    "Música",
-                                    "Computación",
-                                    "Biblioteca",
-                                ].map((subject) => (
-                                    <div key={subject} className={`p-2 rounded text-xs font-medium ${getSubjectColor(subject)}`}>
-                                        {subject}
+                                        {day}
                                     </div>
                                 ))}
+
+                                {/* Schedule Rows */}
+                                {timeSlots.map((time, timeIndex) => (
+                                    <Fragment key={time}>
+                                        {/* Time Column */}
+                                        <div className="text-xs text-slate-600 p-3 bg-slate-50 rounded-lg flex items-center justify-center font-medium">{time}</div>
+
+                                        {/* Class Cells */}
+                                        {days.map((day) => {
+                                            // Normalizar formato de hora para comparación (ej. "07:00:00" -> "07:00")
+                                            const [slotStart] = time.split(' - ');
+
+                                            const classInfo = classes.find(c => {
+                                                // Normalizar hora de DB (ej: "8:00" -> "08:00") para asegurar coincidencia
+                                                const parts = c.start_time.split(':');
+                                                const dbStart = `${parts[0].padStart(2, '0')}:${parts[1]}`;
+                                                return c.day_of_week === day && dbStart === slotStart;
+                                            });
+
+
+                                            const isBreak = classInfo?.subject_name === "Receso"
+
+                                            return (
+                                                <div
+                                                    key={`${day}-${timeIndex}`}
+                                                    className={`p-3 rounded-lg min-h-[80px] ${classInfo ? (isBreak ? "bg-slate-200 text-slate-700" : "bg-blue-50 text-blue-900 border-l-4 border-l-blue-500") : "bg-white border border-slate-100"} ${isBreak ? "flex items-center justify-center" : ""}`}
+                                                >
+                                                    {classInfo ? (
+                                                        isBreak ? (
+                                                            <span className="text-sm font-medium">☕ Receso</span>
+                                                        ) : (
+                                                            <>
+                                                                <div className="font-semibold text-sm mb-1">{classInfo.subject_name}</div>
+                                                                <div className="text-xs opacity-90">{classInfo.teacher_name}</div>
+                                                                <div className="text-xs opacity-75 mt-0.5">{classInfo.group_name}</div>
+                                                            </>
+                                                        )
+                                                    ) : null}
+                                                </div>
+                                            )
+                                        })}
+                                    </Fragment>
+                                ))}
                             </div>
+
+
                         </div>
                     </div>
-                </div>
+                
             </CardContent>
         </Card>
     )
