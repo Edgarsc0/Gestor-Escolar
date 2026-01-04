@@ -28,8 +28,8 @@ export default function DashboardHeader({ currentChild, childrenList, isLoading 
                         <div>
                             <h1 className="text-xl font-semibold text-slate-900">{currentChild?.student_name || "Cargando..."}</h1>
                             <p className="text-sm text-slate-600">
-                                {currentChild?.group_name 
-                                    ? `${currentChild.level_name || ''} • ${currentChild.group_name}` 
+                                {currentChild?.group_name
+                                    ? `${currentChild.level_name || ''} • ${currentChild.group_name}`
                                     : "Panel Estudiantil"}
                             </p>
                         </div>
@@ -59,9 +59,9 @@ export default function DashboardHeader({ currentChild, childrenList, isLoading 
                         )}
                     </div>
                     <div className="flex items-center gap-3">
-  
+
                         <Avatar className="h-9 w-9">
-                            <AvatarFallback onClick={()=>{router.push('/padre_tutor/info')}}>{user?.full_name?.substring(0, 2).toUpperCase() || "U"}</AvatarFallback>
+                            <AvatarFallback onClick={() => { router.push('/padre_tutor/info') }}>{user?.full_name?.substring(0, 2).toUpperCase() || "U"}</AvatarFallback>
                         </Avatar>
                     </div>
                 </div>

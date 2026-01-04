@@ -13,11 +13,11 @@ import { LoadingOverlay } from "@/components/custom/LoadingOverlay"
 import { SuccessModal } from "@/components/custom/SuccessDialog"
 
 export function GroupsView({ onViewProfile }) {
-    const { 
-        groups, teachers, academicLevels, students, 
-        isLoading, isStudentsLoading, 
-        fetchStudents, createGroup, updateGroup, deleteGroup, 
-        removeStudent, emptyGroup, enrollStudents 
+    const {
+        groups, teachers, academicLevels, students,
+        isLoading, isStudentsLoading,
+        fetchStudents, createGroup, updateGroup, deleteGroup,
+        removeStudent, emptyGroup, enrollStudents
     } = useGroups()
 
     const [selectedLevel, setSelectedLevel] = useState("all")
@@ -65,7 +65,7 @@ export function GroupsView({ onViewProfile }) {
         }
         try {
             if (editingGroup) {
-                
+
                 if (editingGroup.main_teacher_id != newTeacherId && newTeacherId) {
                     const scheduleRes = await fetch(`/api/schedules/group/${editingGroup.id}`)
                     const groupSchedule = scheduleRes.ok ? await scheduleRes.json() : []
@@ -116,7 +116,7 @@ export function GroupsView({ onViewProfile }) {
 
         setIsSaving(true)
         for (const item of itemsToUpdate) {
-            const hasConflict = teacherSchedule.some(t => 
+            const hasConflict = teacherSchedule.some(t =>
                 t.day_of_week === item.day_of_week &&
                 isOverlap(item.start_time, item.end_time, t.start_time, t.end_time)
             )
@@ -233,7 +233,8 @@ export function GroupsView({ onViewProfile }) {
             primaria: "bg-blue-500 border-blue-600",
             secundaria: "bg-purple-500 border-purple-600",
             preparatoria: "bg-orange-500 border-orange-600",
-            bachillerato: "bg-orange-500 border-orange-600"
+            bachillerato: "bg-red-700 border-red-600",
+            
         }
         return colors[slug] || "bg-slate-500 border-slate-600"
     }
@@ -262,33 +263,33 @@ export function GroupsView({ onViewProfile }) {
 
                 {/* Selector de Nivel */}
                 <div className="flex gap-2">
-                    
-                        <>
+
+                    <>
+                        <Button
+                            variant={selectedLevel === "all" ? "default" : "outline"}
+                            onClick={() => {
+                                setSelectedLevel("all")
+                                setSelectedGroup(null)
+                            }}
+                            className={selectedLevel === "all" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                        >
+                            Todos
+                        </Button>
+                        {academicLevels.map((level) => (
                             <Button
-                                variant={selectedLevel === "all" ? "default" : "outline"}
+                                key={level.id}
+                                variant={selectedLevel === level.slug ? "default" : "outline"}
                                 onClick={() => {
-                                    setSelectedLevel("all")
+                                    setSelectedLevel(level.slug)
                                     setSelectedGroup(null)
                                 }}
-                                className={selectedLevel === "all" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                                className={`capitalize ${selectedLevel === level.slug ? "bg-blue-600 hover:bg-blue-700" : ""}`}
                             >
-                                Todos
+                                {level.name}
                             </Button>
-                            {academicLevels.map((level) => (
-                                <Button
-                                    key={level.id}
-                                    variant={selectedLevel === level.slug ? "default" : "outline"}
-                                    onClick={() => {
-                                        setSelectedLevel(level.slug)
-                                        setSelectedGroup(null)
-                                    }}
-                                    className={`capitalize ${selectedLevel === level.slug ? "bg-blue-600 hover:bg-blue-700" : ""}`}
-                                >
-                                    {level.name}
-                                </Button>
-                            ))}
-                        </>
-                    
+                        ))}
+                    </>
+
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden">
@@ -375,9 +376,9 @@ export function GroupsView({ onViewProfile }) {
                                             </p>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <Button 
-                                                variant="outline" 
-                                                size="sm" 
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
                                                 className="text-red-600 border-red-200 hover:bg-red-50"
                                                 onClick={() => setActionToConfirm({ type: 'empty_group', group: selectedGroup })}
                                             >
@@ -401,46 +402,46 @@ export function GroupsView({ onViewProfile }) {
                                     </div>
                                 </CardHeader>
                                 <CardContent className="flex-1 overflow-auto p-5">
-                                    
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>Nombre</TableHead>
-                                                    <TableHead>Email</TableHead>
-                                                    <TableHead>Estado</TableHead>
-                                                    <TableHead className="text-right">Acciones</TableHead>
+
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Nombre</TableHead>
+                                                <TableHead>Email</TableHead>
+                                                <TableHead>Estado</TableHead>
+                                                <TableHead className="text-right">Acciones</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {filteredStudents.map((student) => (
+                                                <TableRow key={student.id}>
+                                                    <TableCell className="font-medium">{student.full_name}</TableCell>
+                                                    <TableCell className="text-slate-600">{student.email}</TableCell>
+                                                    <TableCell>
+                                                        <Badge className={student.status === "active" ? "bg-green-100 text-green-700 border-green-200" : "bg-slate-100 text-slate-700"}>
+                                                            {student.status === "active" ? "Activo" : "Inactivo"}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <div className="flex justify-end gap-2">
+                                                            <Button variant="ghost" size="sm" onClick={() => onViewProfile(student.id)}>
+                                                                Ver Perfil
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-slate-400 hover:text-red-600"
+                                                                onClick={() => setActionToConfirm({ type: 'delete_student', student })}
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </TableCell>
                                                 </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {filteredStudents.map((student) => (
-                                                    <TableRow key={student.id}>
-                                                        <TableCell className="font-medium">{student.full_name}</TableCell>
-                                                        <TableCell className="text-slate-600">{student.email}</TableCell>
-                                                        <TableCell>
-                                                            <Badge className={student.status === "active" ? "bg-green-100 text-green-700 border-green-200" : "bg-slate-100 text-slate-700"}>
-                                                                {student.status === "active" ? "Activo" : "Inactivo"}
-                                                            </Badge>
-                                                        </TableCell>
-                                                        <TableCell className="text-right">
-                                                            <div className="flex justify-end gap-2">
-                                                                <Button variant="ghost" size="sm" onClick={() => onViewProfile(student.id)}>
-                                                                    Ver Perfil
-                                                                </Button>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-8 w-8 text-slate-400 hover:text-red-600"
-                                                                    onClick={() => setActionToConfirm({ type: 'delete_student', student })}
-                                                                >
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </Button>
-                                                            </div>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+
                                 </CardContent>
                             </>
                         ) : (
@@ -454,13 +455,13 @@ export function GroupsView({ onViewProfile }) {
                 </div>
 
                 {/* Diálogo Crear/Editar */}
-                <GroupFormDialog 
-                    isOpen={isDialogOpen} 
-                    onClose={setIsDialogOpen} 
-                    onSave={handleSaveGroup} 
-                    group={editingGroup} 
-                    teachers={teachers.filter(t => t.status === 'active')} 
-                    academicLevels={academicLevels} 
+                <GroupFormDialog
+                    isOpen={isDialogOpen}
+                    onClose={setIsDialogOpen}
+                    onSave={handleSaveGroup}
+                    group={editingGroup}
+                    teachers={teachers.filter(t => t.status === 'active')}
+                    academicLevels={academicLevels}
                 />
 
                 {/* Diálogo de Actualización de Profesor en Horario */}
@@ -477,8 +478,8 @@ export function GroupsView({ onViewProfile }) {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead className="w-12">
-                                            <input 
-                                                type="checkbox" 
+                                            <input
+                                                type="checkbox"
                                                 checked={teacherUpdateData?.groupSchedule.length > 0 && selectedScheduleIds.size === teacherUpdateData.groupSchedule.length}
                                                 onChange={(e) => {
                                                     if (e.target.checked) {
@@ -500,8 +501,8 @@ export function GroupsView({ onViewProfile }) {
                                     {teacherUpdateData?.groupSchedule.map(item => (
                                         <TableRow key={item.id}>
                                             <TableCell>
-                                                <input 
-                                                    type="checkbox" 
+                                                <input
+                                                    type="checkbox"
                                                     checked={selectedScheduleIds.has(item.id)}
                                                     onChange={(e) => {
                                                         const newSet = new Set(selectedScheduleIds)
@@ -514,7 +515,7 @@ export function GroupsView({ onViewProfile }) {
                                             </TableCell>
                                             <TableCell>{item.subject_name}</TableCell>
                                             <TableCell>{item.day_of_week}</TableCell>
-                                            <TableCell>{item.start_time.substring(0,5)} - {item.end_time.substring(0,5)}</TableCell>
+                                            <TableCell>{item.start_time.substring(0, 5)} - {item.end_time.substring(0, 5)}</TableCell>
                                             <TableCell>{item.teacher_name || "Sin asignar"}</TableCell>
                                         </TableRow>
                                     ))}
@@ -549,7 +550,7 @@ export function GroupsView({ onViewProfile }) {
                                         <ul className="list-disc pl-5 text-slate-600 max-h-40 overflow-y-auto">
                                             {conflictReport.failures.map((fail, idx) => (
                                                 <li key={idx}>
-                                                    {fail.subject_name} ({fail.day_of_week} {fail.start_time.substring(0,5)}): {fail.reason || "Conflicto de horario"}
+                                                    {fail.subject_name} ({fail.day_of_week} {fail.start_time.substring(0, 5)}): {fail.reason || "Conflicto de horario"}
                                                 </li>
                                             ))}
                                         </ul>
@@ -577,8 +578,8 @@ export function GroupsView({ onViewProfile }) {
                                     : actionToConfirm?.type === 'delete_student'
                                         ? `¿Estás seguro de que deseas dar de baja al alumno "${actionToConfirm?.student?.full_name}" de este grupo?`
                                         : actionToConfirm?.type === 'empty_group'
-                                        ? `¿Estás seguro de que deseas eliminar a TODOS los alumnos del grupo "${actionToConfirm?.group?.name}"? Esta acción no se puede deshacer.`
-                                        : `¿Estás seguro de que deseas guardar los cambios para el grupo "${actionToConfirm?.group?.name}"?`
+                                            ? `¿Estás seguro de que deseas eliminar a TODOS los alumnos del grupo "${actionToConfirm?.group?.name}"? Esta acción no se puede deshacer.`
+                                            : `¿Estás seguro de que deseas guardar los cambios para el grupo "${actionToConfirm?.group?.name}"?`
                                 }
                             </DialogDescription>
                         </DialogHeader>
@@ -595,18 +596,18 @@ export function GroupsView({ onViewProfile }) {
                 </Dialog>
 
                 {/* Diálogo de Inscripción de Alumnos */}
-                <EnrollmentDialog 
-                    isOpen={isEnrollDialogOpen} 
-                    onClose={setIsEnrollDialogOpen} 
-                    group={selectedGroup} 
-                    onEnroll={handleEnroll} 
-                    currentStudentIds={students.map(s => s.id)} 
+                <EnrollmentDialog
+                    isOpen={isEnrollDialogOpen}
+                    onClose={setIsEnrollDialogOpen}
+                    group={selectedGroup}
+                    onEnroll={handleEnroll}
+                    currentStudentIds={students.map(s => s.id)}
                 />
 
-                <SuccessModal 
-                    open={showSuccessModal} 
-                    onOpenChange={setShowSuccessModal} 
-                    description={successMessage} 
+                <SuccessModal
+                    open={showSuccessModal}
+                    onOpenChange={setShowSuccessModal}
+                    description={successMessage}
                 />
 
                 <Dialog open={errorDialog.isOpen} onOpenChange={(open) => setErrorDialog(prev => ({ ...prev, isOpen: open }))}>
