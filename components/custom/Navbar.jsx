@@ -20,7 +20,6 @@ const menuLinks = {
         { href: "/teacher?view=grades", text: "Calificaciones" },
         { href: "/teacher?view=schedule", text: "Horario" },
         { href: "/teacher?view=incidents", text: "Incidencias" },
-        { href: "/teacher?view=profile", text: "Mi Perfil" },
     ],
     Estudiante: [
         { href: "/home", text: "Inicio" },
@@ -62,10 +61,22 @@ const UserMenu = ({ userType, grado, params }) => {
     ));
 };
 
+const MiPerfil = (userType) => {
+    if (userType === "Tutor") {
+        return "/padre_tutor/info";
+    }
+    if (userType === "Docente") {
+        return "/teacher?view=profile";
+    }
+    if (userType === "Administrador") {
+        return "/admin/info";
+    }
+}
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { userType, isLoggedIn, grado, logout } = useAuth();
+    console.log(userType)
     const params = useParams();
 
     return (
@@ -111,7 +122,7 @@ export default function Navbar() {
                         )}
                     </div>
                     <div className="mt-4 lg:mt-0 lg:ml-4 flex flex-col lg:flex-row gap-2 items-center">
-                        <a href={isLoggedIn ? "/profile" : "/login"} className="inline-block text-base px-4 py-2 leading-none border rounded text-white border-white hover:border-transparent hover:text-blue-950 hover:bg-white transition-colors duration-200 lg:bg-sky-600 lg:hover:bg-sky-700 lg:border-transparent lg:hover:text-white lg:font-bold lg:hover:scale-105 lg:transition-transform lg:duration-300 lg:ease-in-out">
+                        <a href={isLoggedIn ? MiPerfil(userType) : "/login"} className="inline-block text-base px-4 py-2 leading-none border rounded text-white border-white hover:border-transparent hover:text-blue-950 hover:bg-white transition-colors duration-200 lg:bg-sky-600 lg:hover:bg-sky-700 lg:border-transparent lg:hover:text-white lg:font-bold lg:hover:scale-105 lg:transition-transform lg:duration-300 lg:ease-in-out">
                             {isLoggedIn ? "Mi Perfil" : "Iniciar Sesión"}
                         </a>
                         {isLoggedIn && (

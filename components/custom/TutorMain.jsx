@@ -122,29 +122,7 @@ export default function TutorMain() {
                                         </div>
                                     </CardHeader>
                                     <CardContent className="space-y-3">
-                                        <div className="grid grid-cols-3 gap-3 text-center">
-                                            <div className="space-y-1">
-                                                <div className="flex items-center justify-center">
-                                                    <TrendingUp className="size-4 text-green-500" />
-                                                </div>
-                                                <p className="text-2xl font-bold text-foreground">{child.avgGrade}</p>
-                                                <p className="text-xs text-muted-foreground">Promedio</p>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <div className="flex items-center justify-center">
-                                                    <Award className="size-4 text-blue-500" />
-                                                </div>
-                                                <p className="text-2xl font-bold text-foreground">{child.attendance}</p>
-                                                <p className="text-xs text-muted-foreground">Asistencia</p>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <div className="flex items-center justify-center">
-                                                    <BookOpen className="size-4 text-orange-500" />
-                                                </div>
-                                                <p className="text-2xl font-bold text-foreground">{child.subjects}</p>
-                                                <p className="text-xs text-muted-foreground">Materias</p>
-                                            </div>
-                                        </div>
+                                        
                                         <Button
                                             onClick={() => handleChildSelect(child)}
                                             className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-all bg-transparent"
