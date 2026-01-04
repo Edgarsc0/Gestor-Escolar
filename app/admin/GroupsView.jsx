@@ -233,8 +233,7 @@ export function GroupsView({ onViewProfile }) {
             primaria: "bg-blue-500 border-blue-600",
             secundaria: "bg-purple-500 border-purple-600",
             preparatoria: "bg-orange-500 border-orange-600",
-            bachillerato: "bg-red-700 border-red-600",
-            
+            universidad: "bg-red-700 border-red-600",
         }
         return colors[slug] || "bg-slate-500 border-slate-600"
     }
