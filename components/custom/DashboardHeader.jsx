@@ -59,10 +59,7 @@ export default function DashboardHeader({ currentChild, childrenList, isLoading 
                         )}
                     </div>
                     <div className="flex items-center gap-3">
-                        <Button variant="ghost" size="icon" className="relative">
-                            <Bell className="h-5 w-5" />
-                            <span className="absolute top-1 right-1 h-2 w-2 bg-rose-500 rounded-full"></span>
-                        </Button>
+  
                         <Avatar className="h-9 w-9">
                             <AvatarFallback onClick={()=>{router.push('/padre_tutor/info')}}>{user?.full_name?.substring(0, 2).toUpperCase() || "U"}</AvatarFallback>
                         </Avatar>
