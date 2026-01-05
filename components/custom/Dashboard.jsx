@@ -1,5 +1,6 @@
 "use client"
 
+import CertificateDownloadButton from "./CertificateDownloadButton"
 import { useState, useEffect } from "react"
 import { useParams, useSearchParams, useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/useAuth"
@@ -428,6 +429,18 @@ export default function StudentDashboard() {
           )}
 
           <TabsContent value="profile">
+            {(currentChild || user?.role === 'student') && (
+                <div className="flex justify-end pb-2">
+                    <CertificateDownloadButton 
+                        studentId={currentChild?.student_id || params?.son || user?.id}
+                        studentName={currentChild?.student_name || user?.full_name}
+                        // Pasamos el nivel (slug o name) que ya tienes en currentChild
+                        studentLevel={currentChild?.level_slug || currentChild?.level_name || "primaria"}
+                        // Aquí podrías conectar una variable real si tienes lógica de adeudos
+                        hasAdministrativeBlock={false} 
+                    />
+                </div>
+            )}
             <ProfileTab 
                 studentId={studentId} 
                 studentName={currentChild?.student_name} 
