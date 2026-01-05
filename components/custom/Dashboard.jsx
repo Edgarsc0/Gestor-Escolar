@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/useAuth"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent } from "@/components/ui/card" // IMPORTADO
 import DashboardHeader from "./DashboardHeader"
 import DashboardKPIs from "./DashboardKPIs"
 import AcademicTab from "./AcademicTab"
@@ -15,7 +16,29 @@ import ProfileTab from "./ProfileTab"
 import JustificationDialog from "./JustificationDialog"
 import { LoadingOverlay } from "./LoadingOverlay"
 import KardexTab from "./KardexTab"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Lock } from "lucide-react" // IMPORTADO LOCK
+
+// 1. COMPONENTE DE MENSAJE DE RESTRICCIÓN
+const RestrictedAccessMessage = () => (
+  <div className="mt-6 flex justify-center">
+    <Card className="w-full max-w-3xl border-orange-200 bg-orange-50/50">
+      <CardContent className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+        <div className="p-4 bg-white rounded-full shadow-sm ring-1 ring-orange-100">
+          <Lock className="w-12 h-12 text-orange-400" />
+        </div>
+        <div className="space-y-2 max-w-md">
+          <h3 className="text-xl font-bold text-gray-900">Acceso Limitado</h3>
+          <p className="text-gray-500">
+            Debido a las regulaciones de privacidad para alumnos de Educación Media Superior y Superior, esta información es confidencial.
+          </p>
+          <p className="text-sm text-orange-600 font-medium bg-orange-100/50 py-1 px-3 rounded-full inline-block">
+            Solo el alumno tiene acceso a esta sección
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+);
 
 export default function StudentDashboard() {
   const { user } = useAuth()
@@ -42,9 +65,19 @@ export default function StudentDashboard() {
   const [isLoadingKardex, setIsLoadingKardex] = useState(false)
   const [errorDialog, setErrorDialog] = useState({ isOpen: false, title: "", description: "" })
 
+  const showKardex = user?.role === 'tutor'
+
+  // ... código anterior ...
   const studentId = params?.son;
 
-  const showKardex = user?.role === 'tutor'
+  // --- AGREGA ESTAS LÍNEAS TEMPORALES ---
+  console.log("Hijo seleccionado:", currentChild);
+  console.log("Nivel que llega de la API:", currentChild?.level_slug);
+  // ---------------------------------------
+
+  // 2. LÓGICA PARA DETECTAR SI ES PREPA O UNIVERSIDAD
+  // Asegúrate de que tu API devuelve 'level_slug' en la lista de hijos
+  const isRestricted = ["preparatoria", "universidad"].includes(currentChild?.level_slug?.toLowerCase() || "");
 
   useEffect(() => {
     const view = searchParams.get('view');
@@ -88,9 +121,13 @@ export default function StudentDashboard() {
     fetchChildren();
   }, [user, params]);
 
+  // Bloqueamos fetch de notas si está restringido
   useEffect(() => {
     const fetchGrades = async () => {
-        if (!studentId) return;
+        if (!studentId || isRestricted) { // Modificado
+            setIsLoadingGrades(false); 
+            return;
+        } 
         
         setIsLoadingGrades(true)
         try {
@@ -116,11 +153,14 @@ export default function StudentDashboard() {
     }
 
     fetchGrades()
-  }, [studentId])
+  }, [studentId, isRestricted])
 
   useEffect(() => {
     const fetchSchedule = async () => {
-        if (!studentId) return
+        if (!studentId || isRestricted) { // Modificado
+            setIsLoadingSchedule(false);
+            return;
+        }
         setIsLoadingSchedule(true)
         try {
             const res = await fetch(`/api/schedules/student/${studentId}`)
@@ -134,11 +174,14 @@ export default function StudentDashboard() {
         }
     }
     fetchSchedule()
-  }, [studentId])
+  }, [studentId, isRestricted])
 
   useEffect(() => {
     const fetchIncidents = async () => {
-        if (!studentId) return
+        if (!studentId || isRestricted) { // Modificado
+            setIsLoadingIncidents(false);
+            return;
+        }
         setIsLoadingIncidents(true)
         try {
             const res = await fetch(`/api/incidents?student_id=${studentId}`)
@@ -160,17 +203,16 @@ export default function StudentDashboard() {
         }
     }
     fetchIncidents()
-  }, [studentId, refreshIncidents])
+  }, [studentId, refreshIncidents, isRestricted])
 
   useEffect(() => {
     const fetchKardex = async () => {
-        if (!studentId) return
+        if (!studentId || isRestricted) return; // Modificado
         setIsLoadingKardex(true)
         try {
             const res = await fetch(`/api/grades/kardex/${studentId}`)
             if (res.ok) {
                 const kardex = await res.json();
-                console.log("Kardex data:", kardex);
                 setKardexData(kardex)
             }
         } catch (error) {
@@ -180,7 +222,7 @@ export default function StudentDashboard() {
         }
     }
     fetchKardex()
-  }, [studentId])
+  }, [studentId, isRestricted])
 
   const handleJustify = (incident) => {
     setSelectedIncident(incident)
@@ -214,7 +256,7 @@ export default function StudentDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 mt-10">
-      {(isLoadingChildren || isLoadingGrades || isLoadingSchedule || isLoadingIncidents || isLoadingKardex) && <LoadingOverlay message="Cargando información del alumno..." />}
+      {(isLoadingChildren || (isLoadingGrades && !isRestricted)) && <LoadingOverlay message="Cargando información del alumno..." />}
       
       {/* Header Section */}
       <DashboardHeader
@@ -225,8 +267,11 @@ export default function StudentDashboard() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* KPI Cards */}
-        <DashboardKPIs subjects={subjects} scheduleData={scheduleData} incidents={incidents} />
+        
+        {/* KPI Cards: También se ocultan si es restringido, o puedes dejarlos visibles pero vacíos */}
+        {!isRestricted && (
+           <DashboardKPIs subjects={subjects} scheduleData={scheduleData} incidents={incidents} />
+        )}
 
         {/* Tabs Section */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
@@ -238,27 +283,45 @@ export default function StudentDashboard() {
             <TabsTrigger value="profile">Perfil</TabsTrigger>
           </TabsList>
 
+          {/* 3. APLICACIÓN DEL BLOQUEO EN CADA TAB */}
+          
           {/* Tab A: Academic */}
           <TabsContent value="academic">
-            <AcademicTab subjects={subjects} period={currentPeriod} />
+            {isRestricted ? (
+                <RestrictedAccessMessage />
+            ) : (
+                <AcademicTab subjects={subjects} period={currentPeriod} />
+            )}
           </TabsContent>
 
           <TabsContent value="schedule">
-            <ScheduleTab classes={scheduleData} isLoading={isLoadingSchedule} />
+            {isRestricted ? (
+                <RestrictedAccessMessage />
+            ) : (
+                <ScheduleTab classes={scheduleData} isLoading={isLoadingSchedule} />
+            )}
           </TabsContent>
 
           {/* Tab B: Incidents */}
           <TabsContent value="incidents">
-            <IncidentsTab incidents={incidents} onJustify={handleJustify} onAcknowledge={handleAcknowledge} />
+            {isRestricted ? (
+                <RestrictedAccessMessage />
+            ) : (
+                <IncidentsTab incidents={incidents} onJustify={handleJustify} onAcknowledge={handleAcknowledge} />
+            )}
           </TabsContent>
 
           {showKardex && (
             <TabsContent value="kardex">
-              <KardexTab kardexData={kardexData} />
+              {isRestricted ? (
+                  <RestrictedAccessMessage />
+              ) : (
+                  <KardexTab kardexData={kardexData} />
+              )}
             </TabsContent>
           )}
 
-          {/* Tab C: Profile */}
+          {/* Tab C: Profile (ESTE SIEMPRE SE MUESTRA) */}
           <TabsContent value="profile">
             <ProfileTab studentId={params?.son || user?.id} studentName={currentChild?.student_name} />
           </TabsContent>

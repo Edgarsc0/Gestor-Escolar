@@ -157,24 +157,35 @@ const querys = {
             WHERE ur.student_id = $1
         `,
         getByTutorId: `
-            SELECT ur.*, u.full_name as student_name, u.email as student_email, u.status as student_status,
-            g.name as group_name, al.name as level_name
-            FROM user_relationships ur
-            JOIN users u ON ur.student_id = u.id
-            LEFT JOIN group_students gs ON u.id = gs.student_id
-            LEFT JOIN groups g ON gs.group_id = g.id
-            LEFT JOIN academic_levels al ON g.academic_level_id = al.id
-            WHERE ur.tutor_id = $1
-        `,
+        SELECT ur.*, u.full_name as student_name, u.email as student_email, u.status as student_status,
+        g.name as group_name, al.name as level_name, al.slug as level_slug
+        FROM user_relationships ur
+        JOIN users u ON ur.student_id = u.id
+        LEFT JOIN group_students gs ON u.id = gs.student_id
+        LEFT JOIN groups g ON gs.group_id = g.id
+        LEFT JOIN academic_levels al ON g.academic_level_id = al.id
+        WHERE ur.tutor_id = $1
+    `,
         delete: "DELETE FROM user_relationships WHERE id = $1 RETURNING id",
         deleteByPair: "DELETE FROM user_relationships WHERE student_id = $1 AND tutor_id = $2 RETURNING id",
         getAllStudentIds: "SELECT DISTINCT student_id FROM user_relationships",
         getAll: "SELECT * FROM user_relationships",
         fixSequence: "SELECT setval(pg_get_serial_sequence('user_relationships', 'id'), (SELECT MAX(id) FROM user_relationships))"
     },
-    personalInfo: {
+   personalInfo: {
         create: "INSERT INTO personal_info (user_id, personal_email, cell_phone, additional_phone, street_address, neighborhood, postal_code, blood_type, allergies) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
-        getByUserId: "SELECT * FROM personal_info WHERE user_id = $1",
+        
+        // --- CAMBIO AQUÍ ---
+        getByUserId: `
+            SELECT pi.*, al.name as academic_levels
+            FROM personal_info pi
+            LEFT JOIN group_students gs ON pi.user_id = gs.student_id
+            LEFT JOIN groups g ON gs.group_id = g.id
+            LEFT JOIN academic_levels al ON g.academic_level_id = al.id
+            WHERE pi.user_id = $1
+        `,
+        // -------------------
+
         update: "UPDATE personal_info SET personal_email = COALESCE($2, personal_email), cell_phone = COALESCE($3, cell_phone), additional_phone = COALESCE($4, additional_phone), street_address = COALESCE($5, street_address), neighborhood = COALESCE($6, neighborhood), postal_code = COALESCE($7, postal_code), blood_type = COALESCE($8, blood_type), allergies = COALESCE($9, allergies), updated_at = CURRENT_TIMESTAMP WHERE user_id = $1 RETURNING *",
         fixSequence: "SELECT setval(pg_get_serial_sequence('personal_info', 'id'), (SELECT MAX(id) FROM personal_info))"
     },

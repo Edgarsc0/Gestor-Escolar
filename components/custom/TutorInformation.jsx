@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useAuth } from "@/contexts/useAuth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -15,12 +15,13 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import { User, Mail, Phone, MapPin, Lock, AlertCircle, Loader2, Heart } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { User, Mail, Phone, MapPin, Lock, AlertCircle, Loader2, Heart, Info } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { SuccessModal } from "./SuccessDialog"
 import { LoadingOverlay } from "./LoadingOverlay"
 
-export default function TutorInformation({ userId, userName }) {
+// AHORA RECIBE 'level' COMO PROP
+export default function TutorInformation({ userId, userName, level }) {
     const { user } = useAuth()
     const effectiveUserId = userId || user?.id
     const isOwnProfile = !userId || (user && String(userId) === String(user.id))
@@ -32,6 +33,9 @@ export default function TutorInformation({ userId, userName }) {
     const [errorDialog, setErrorDialog] = useState({ isOpen: false, title: "", description: "" })
     const [showSuccessModal, setShowSuccessModal] = useState(false)
     const [successMessage, setSuccessMessage] = useState("")
+
+    // Estado local para el nivel, inicializado con la prop
+    const [studentLevel, setStudentLevel] = useState(level || "")
 
     const [identityData, setIdentityData] = useState({
         fullName: "",
@@ -60,6 +64,44 @@ export default function TutorInformation({ userId, userName }) {
         confirmPassword: "",
     })
 
+    // Sincronizar el estado si la prop 'level' cambia (ej. al cambiar de hijo en el dashboard)
+    useEffect(() => {
+        if (level) {
+            setStudentLevel(level)
+        }
+    }, [level])
+
+    // --- LÓGICA DE PERMISOS ---
+    const canEdit = useMemo(() => {
+        // 1. Validaciones básicas de seguridad
+        if (!user || !studentLevel) return false; 
+
+        // 2. Normalizar textos
+        const userRole = (user.role || "").trim().toLowerCase();
+        const currentLevel = String(studentLevel).trim().toLowerCase();
+
+        // 3. Definición de niveles
+        const basicLevels = ["kinder", "kínder", "preescolar", "primaria", "secundaria"];
+        const superiorLevels = ["prepa", "bachillerato", "preparatoria", "universidad", "licenciatura", "ingeniería", "tsu"];
+
+        // LÓGICA PADRE / TUTOR
+        if (["padre", "tutor", "madre", "acudiente"].includes(userRole)) {
+            // Solo edita si está en niveles básicos
+            return basicLevels.some(l => currentLevel.includes(l));
+        }
+
+        // LÓGICA ALUMNO
+        if (["alumno", "estudiante"].includes(userRole)) {
+            // Solo edita si está en niveles superiores
+            return superiorLevels.some(l => currentLevel.includes(l));
+        }
+
+        // ADMIN
+        if (["admin", "administrador"].includes(userRole)) return true;
+
+        return false;
+    }, [user, studentLevel]);
+
     useEffect(() => {
         if (effectiveUserId) {
             if (isOwnProfile && user) {                
@@ -74,6 +116,18 @@ export default function TutorInformation({ userId, userName }) {
                     const res = await fetch(`/api/personal_info/${effectiveUserId}`)
                     if (res.ok) {
                         const data = await res.json()
+                        
+                        console.log("DATOS RECIBIDOS:", data); // Para verificar
+
+                        // --- CAMBIO CLAVE AQUÍ ---
+                        // Leemos el nivel directamente de la respuesta de la API
+                        // Si la API devuelve 'academic_levels', lo usamos.
+                        // Si no, usamos 'level' (prop) como respaldo.
+                        const nivelDesdeAPI = data.academic_levels || data.level || data.grado || "";
+                        
+                        setStudentLevel(nivelDesdeAPI || level || ""); 
+                        // -------------------------
+
                         setContactInfo({
                             personal_email: data.personal_email || "",
                             cell_phone: data.cell_phone || "",
@@ -196,6 +250,20 @@ export default function TutorInformation({ userId, userName }) {
                     </p>
                 </div>
 
+                {/* ALERTA DE MODO LECTURA */}
+                {!isLoading && !canEdit && (
+                    <Alert variant="default" className="bg-amber-50 border-amber-200 text-amber-800">
+                        <Info className="h-4 w-4 text-amber-600" />
+                        <AlertTitle>Modo Solo Lectura</AlertTitle>
+                        <AlertDescription>
+                            No puedes modificar estos datos. 
+                            {user?.role === 'tutor' 
+                                ? " Los datos de alumnos de Educación Media/Superior deben ser gestionados por el alumno." 
+                                : " Los datos de alumnos de Educación Básica deben ser gestionados por el tutor."}
+                        </AlertDescription>
+                    </Alert>
+                )}
+
                 <Card className="border-slate-200 shadow-sm bg-white">
                     <CardHeader className="border-b border-slate-100 pb-4">
                         <div className="flex items-center gap-3">
@@ -215,7 +283,6 @@ export default function TutorInformation({ userId, userName }) {
                                 <Input value={identityData.fullName} disabled className="bg-slate-50 border-slate-200 text-slate-600" />
                             </div>
                         </div>
-
                         <Alert className="bg-blue-50 border-blue-100 text-blue-800">
                             <AlertCircle className="h-4 w-4 text-blue-600" />
                             <AlertDescription>
@@ -245,10 +312,11 @@ export default function TutorInformation({ userId, userName }) {
                                     <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                                     <Input
                                         type="email"
+                                        disabled={!canEdit}
                                         value={contactInfo.personal_email}
                                         onChange={(e) => handleContactChange("personal_email", e.target.value)}
                                         placeholder="tu-email@ejemplo.com"
-                                        className="pl-9 border-slate-200 focus:border-blue-500"
+                                        className="pl-9 border-slate-200 focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
                                     />
                                 </div>
                                 <p className="text-xs text-slate-500">Usado para recuperación de contraseña</p>
@@ -260,10 +328,11 @@ export default function TutorInformation({ userId, userName }) {
                                     <Phone className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                                     <Input
                                         type="tel"
+                                        disabled={!canEdit}
                                         value={contactInfo.cell_phone}
                                         onChange={(e) => handleContactChange("cell_phone", e.target.value)}
                                         placeholder="+52 55 1234 5678"
-                                        className="pl-9 border-slate-200 focus:border-blue-500"
+                                        className="pl-9 border-slate-200 focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
                                     />
                                 </div>
                             </div>
@@ -274,10 +343,11 @@ export default function TutorInformation({ userId, userName }) {
                                     <Phone className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                                     <Input
                                         type="tel"
+                                        disabled={!canEdit}
                                         value={contactInfo.additional_phone}
                                         onChange={(e) => handleContactChange("additional_phone", e.target.value)}
                                         placeholder="+52 55 8765 4321 (Opcional)"
-                                        className="pl-9 border-slate-200 focus:border-blue-500"
+                                        className="pl-9 border-slate-200 focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
                                     />
                                 </div>
                             </div>
@@ -302,30 +372,33 @@ export default function TutorInformation({ userId, userName }) {
                             <div className="space-y-2 md:col-span-2">
                                 <Label className="text-slate-700">Calle y Número</Label>
                                 <Input
+                                    disabled={!canEdit}
                                     value={addressInfo.street_address}
                                     onChange={(e) => handleAddressChange("street_address", e.target.value)}
                                     placeholder="Avenida Principal 123"
-                                    className="border-slate-200 focus:border-blue-500"
+                                    className="border-slate-200 focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
                                 />
                             </div>
 
                             <div className="space-y-2">
                                 <Label className="text-slate-700">Colonia/Barrio</Label>
                                 <Input
+                                    disabled={!canEdit}
                                     value={addressInfo.neighborhood}
                                     onChange={(e) => handleAddressChange("neighborhood", e.target.value)}
                                     placeholder="Centro"
-                                    className="border-slate-200 focus:border-blue-500"
+                                    className="border-slate-200 focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
                                 />
                             </div>
 
                             <div className="space-y-2">
                                 <Label className="text-slate-700">Código Postal</Label>
                                 <Input
+                                    disabled={!canEdit}
                                     value={addressInfo.postal_code}
                                     onChange={(e) => handleAddressChange("postal_code", e.target.value)}
                                     placeholder="12345"
-                                    className="border-slate-200 focus:border-blue-500"
+                                    className="border-slate-200 focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
                                 />
                             </div>
                         </div>
@@ -349,20 +422,22 @@ export default function TutorInformation({ userId, userName }) {
                             <div className="space-y-2">
                                 <Label className="text-slate-700">Tipo de Sangre</Label>
                                 <Input
+                                    disabled={!canEdit}
                                     value={medicalInfo.blood_type}
                                     onChange={(e) => handleMedicalChange("blood_type", e.target.value)}
                                     placeholder="Ej. O+"
-                                    className="border-slate-200 focus:border-blue-500"
+                                    className="border-slate-200 focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
                                 />
                             </div>
 
                             <div className="space-y-2">
                                 <Label className="text-slate-700">Alergias</Label>
                                 <Input
+                                    disabled={!canEdit}
                                     value={medicalInfo.allergies}
                                     onChange={(e) => handleMedicalChange("allergies", e.target.value)}
                                     placeholder="Ej. Penicilina, Polen (o 'Ninguna')"
-                                    className="border-slate-200 focus:border-blue-500"
+                                    className="border-slate-200 focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
                                 />
                             </div>
                         </div>
@@ -465,18 +540,21 @@ export default function TutorInformation({ userId, userName }) {
                 </Card>
                 )}
 
-                <div className="flex justify-end pt-4 pb-10">
-                    <Button
-                        size="lg"
-                        disabled={!isModified}
-                        onClick={handleSaveChanges}
-                        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white shadow-sm disabled:bg-slate-300 min-w-[150px]"
-                    >
-                        {isSaving ? (
-                            <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Guardando...</>
-                        ) : "Guardar Todos los Cambios"}
-                    </Button>
-                </div>
+                {/* BOTÓN SOLO VISIBLE SI TIENE PERMISO */}
+                {canEdit && (
+                    <div className="flex justify-end pt-4 pb-10">
+                        <Button
+                            size="lg"
+                            disabled={!isModified}
+                            onClick={handleSaveChanges}
+                            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white shadow-sm disabled:bg-slate-300 min-w-[150px]"
+                        >
+                            {isSaving ? (
+                                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Guardando...</>
+                            ) : "Guardar Todos los Cambios"}
+                        </Button>
+                    </div>
+                )}
 
                 <Dialog open={errorDialog.isOpen} onOpenChange={(open) => setErrorDialog(prev => ({ ...prev, isOpen: open }))}>
                     <DialogContent>
