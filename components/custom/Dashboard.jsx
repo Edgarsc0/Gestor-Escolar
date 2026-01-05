@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/useAuth"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent } from "@/components/ui/card" // IMPORTADO
 import DashboardHeader from "./DashboardHeader"
 import DashboardKPIs from "./DashboardKPIs"
 import AcademicTab from "./AcademicTab"
@@ -16,7 +17,28 @@ import JustificationDialog from "./JustificationDialog"
 import { LoadingOverlay } from "./LoadingOverlay"
 import KardexTab from "./KardexTab"
 import AttendanceTab from "./AttendanceTab"
-import { AlertCircle, FileDown } from "lucide-react"
+import { AlertCircle, Lock, FileDown } from "lucide-react"
+
+const RestrictedAccessMessage = () => (
+  <div className="mt-6 flex justify-center">
+    <Card className="w-full max-w-3xl border-orange-200 bg-orange-50/50">
+      <CardContent className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+        <div className="p-4 bg-white rounded-full shadow-sm ring-1 ring-orange-100">
+          <Lock className="w-12 h-12 text-orange-400" />
+        </div>
+        <div className="space-y-2 max-w-md">
+          <h3 className="text-xl font-bold text-gray-900">Acceso Limitado</h3>
+          <p className="text-gray-500">
+            Debido a las regulaciones de privacidad para alumnos de Educación Media Superior y Superior, esta información es confidencial.
+          </p>
+          <p className="text-sm text-orange-600 font-medium bg-orange-100/50 py-1 px-3 rounded-full inline-block">
+            Solo el alumno tiene acceso a esta sección
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+);
 
 export default function StudentDashboard() {
   const { user } = useAuth()
@@ -49,6 +71,8 @@ export default function StudentDashboard() {
   const studentId = user?.role === 'student' ? user.id : params?.son;
 
   const showKardex = user?.role === 'tutor' || user?.role === 'student'
+
+  const isRestricted = user?.role === 'tutor' && ["preparatoria", "universidad"].includes(currentChild?.level_slug?.toLowerCase() || "");
 
   useEffect(() => {
     const view = searchParams.get('view');
@@ -121,8 +145,11 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     const fetchGrades = async () => {
-        if (!studentId) return;
-        
+        if (!studentId || isRestricted) {
+            setIsLoadingGrades(false); 
+            return;
+        } 
+
         setIsLoadingGrades(true)
         try {
             const res = await fetch(`/api/grades/student/${studentId}`)
@@ -147,11 +174,14 @@ export default function StudentDashboard() {
     }
 
     fetchGrades()
-  }, [studentId])
+  }, [studentId, isRestricted]) // isRestricted dependency is important
 
   useEffect(() => {
     const fetchSchedule = async () => {
-        if (!studentId) return
+        if (!studentId || isRestricted) {
+            setIsLoadingSchedule(false);
+            return;
+        }
         setIsLoadingSchedule(true)
         try {
             const res = await fetch(`/api/schedules/student/${studentId}`)
@@ -165,11 +195,14 @@ export default function StudentDashboard() {
         }
     }
     fetchSchedule()
-  }, [studentId])
+  }, [studentId, isRestricted]) // isRestricted dependency is important
 
   useEffect(() => {
     const fetchIncidents = async () => {
-        if (!studentId) return
+        if (!studentId || isRestricted) {
+            setIsLoadingIncidents(false);
+            return;
+        }
         setIsLoadingIncidents(true)
         try {
             const res = await fetch(`/api/incidents?student_id=${studentId}`)
@@ -191,17 +224,16 @@ export default function StudentDashboard() {
         }
     }
     fetchIncidents()
-  }, [studentId, refreshIncidents])
+  }, [studentId, refreshIncidents, isRestricted]) // isRestricted dependency is important
 
   useEffect(() => {
     const fetchKardex = async () => {
-        if (!studentId) return
+        if (!studentId || isRestricted) return;
         setIsLoadingKardex(true)
         try {
             const res = await fetch(`/api/grades/kardex/${studentId}`)
             if (res.ok) {
                 const kardex = await res.json();
-                console.log("Kardex data:", kardex);
                 setKardexData(kardex)
             }
         } catch (error) {
@@ -211,7 +243,7 @@ export default function StudentDashboard() {
         }
     }
     fetchKardex()
-  }, [studentId])
+  }, [studentId, isRestricted]) // isRestricted dependency is important
 
   useEffect(() => {
     const fetchAttendance = async () => {
@@ -342,8 +374,9 @@ export default function StudentDashboard() {
              </Button>
         </div>
 
-        {/* KPI Cards */}
-        <DashboardKPIs subjects={subjects} scheduleData={scheduleData} incidents={incidents} />
+        {!isRestricted && (
+           <DashboardKPIs subjects={subjects} scheduleData={scheduleData} incidents={incidents} />
+        )}
 
         {/* Tabs Section */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
@@ -356,31 +389,44 @@ export default function StudentDashboard() {
             <TabsTrigger value="profile">Perfil</TabsTrigger>
           </TabsList>
 
-          {/* Tab A: Academic */}
           <TabsContent value="academic">
-            <AcademicTab subjects={subjects} period={currentPeriod} />
+            {isRestricted ? (
+                <RestrictedAccessMessage />
+            ) : (
+                <AcademicTab subjects={subjects} period={currentPeriod} />
+            )}
           </TabsContent>
 
           <TabsContent value="schedule">
-            <ScheduleTab classes={scheduleData} isLoading={isLoadingSchedule} />
+            {isRestricted ? (
+                <RestrictedAccessMessage />
+            ) : (
+                <ScheduleTab classes={scheduleData} isLoading={isLoadingSchedule} />
+            )}
           </TabsContent>
 
           <TabsContent value="attendance">
             <AttendanceTab attendanceData={attendanceData} stats={attendanceStats} />
           </TabsContent>
 
-          {/* Tab B: Incidents */}
           <TabsContent value="incidents">
-            <IncidentsTab incidents={incidents} onJustify={handleJustify} onAcknowledge={handleAcknowledge} />
+            {isRestricted ? (
+                <RestrictedAccessMessage />
+            ) : (
+                <IncidentsTab incidents={incidents} onJustify={handleJustify} onAcknowledge={handleAcknowledge} />
+            )}
           </TabsContent>
 
           {showKardex && (
             <TabsContent value="kardex">
-              <KardexTab kardexData={kardexData} />
+              {isRestricted ? (
+                  <RestrictedAccessMessage />
+              ) : (
+                  <KardexTab kardexData={kardexData} />
+              )}
             </TabsContent>
           )}
 
-          {/* Tab C: Profile */}
           <TabsContent value="profile">
             <ProfileTab 
                 studentId={studentId} 

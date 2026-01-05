@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useAuth } from "@/contexts/useAuth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -15,8 +15,8 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import { User, Mail, Phone, MapPin, Lock, AlertCircle, Loader2, Heart } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { User, Mail, Phone, MapPin, Lock, AlertCircle, Loader2, Heart, Info } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { SuccessModal } from "./SuccessDialog"
 import { LoadingOverlay } from "./LoadingOverlay"
 
@@ -32,6 +32,8 @@ export default function TutorInformation({ userId, userName, levelSlug }) {
     const [errorDialog, setErrorDialog] = useState({ isOpen: false, title: "", description: "" })
     const [showSuccessModal, setShowSuccessModal] = useState(false)
     const [successMessage, setSuccessMessage] = useState("")
+
+    const [studentLevel, setStudentLevel] = useState(levelSlug || "")
 
     const [identityData, setIdentityData] = useState({
         fullName: "",
@@ -60,8 +62,32 @@ export default function TutorInformation({ userId, userName, levelSlug }) {
         confirmPassword: "",
     })
 
-    const isStudent = user?.role === 'student';
-    const canEdit = !isStudent || (isStudent && isOwnProfile);
+    useEffect(() => {
+        if (levelSlug) {
+            setStudentLevel(levelSlug)
+        }
+    }, [levelSlug])
+
+    const canEdit = useMemo(() => {
+        if (!user) return false;
+
+        const userRole = (user.role || "").trim().toLowerCase();
+
+        if (["admin", "administrador"].includes(userRole)) return true;
+
+        if (["alumno", "estudiante"].includes(userRole) && isOwnProfile) {
+            return true;
+        }
+
+        if (["padre", "tutor", "madre", "acudiente"].includes(userRole)) {
+            if (!studentLevel) return false; 
+            const currentLevel = String(studentLevel).trim().toLowerCase();
+            const basicLevels = ["kinder", "kínder", "preescolar", "primaria", "secundaria"];
+            return basicLevels.some(l => currentLevel.includes(l));
+        }
+
+        return false;
+    }, [user, studentLevel, isOwnProfile]);
 
     useEffect(() => {
         if (effectiveUserId) {
@@ -77,6 +103,10 @@ export default function TutorInformation({ userId, userName, levelSlug }) {
                     const res = await fetch(`/api/personal_info/${effectiveUserId}`)
                     if (res.ok) {
                         const data = await res.json()
+
+                        const nivelDesdeAPI = data.academic_levels || data.level_slug || data.level || data.grado || "";
+                        setStudentLevel(nivelDesdeAPI || levelSlug || ""); 
+
                         setContactInfo({
                             personal_email: data.personal_email || "",
                             cell_phone: data.cell_phone || "",
@@ -101,7 +131,7 @@ export default function TutorInformation({ userId, userName, levelSlug }) {
             }
             fetchPersonalInfo()
         }
-    }, [effectiveUserId, user, isOwnProfile, userName])
+    }, [effectiveUserId, user, isOwnProfile, userName, levelSlug])
 
     const handleContactChange = (field, value) => {
         setContactInfo((prev) => ({ ...prev, [field]: value }))
@@ -199,6 +229,20 @@ export default function TutorInformation({ userId, userName, levelSlug }) {
                     </p>
                 </div>
 
+                {/* ALERTA DE MODO LECTURA */}
+                {!isLoading && !canEdit && (
+                    <Alert variant="default" className="bg-amber-50 border-amber-200 text-amber-800">
+                        <Info className="h-4 w-4 text-amber-600" />
+                        <AlertTitle>Modo Solo Lectura</AlertTitle>
+                        <AlertDescription>
+                            No puedes modificar estos datos. 
+                            {(user?.role === 'tutor' || user?.role === 'padre')
+                                ? " Los datos de alumnos de niveles superiores deben ser gestionados por el propio alumno." 
+                                : " Los datos de alumnos de Educación Básica deben ser gestionados por el tutor."}
+                        </AlertDescription>
+                    </Alert>
+                )}
+
                 <Card className="border-slate-200 shadow-sm bg-white">
                     <CardHeader className="border-b border-slate-100 pb-4">
                         <div className="flex items-center gap-3">
@@ -218,7 +262,6 @@ export default function TutorInformation({ userId, userName, levelSlug }) {
                                 <Input value={identityData.fullName} disabled className="bg-slate-50 border-slate-200 text-slate-600" />
                             </div>
                         </div>
-
                         <Alert className="bg-blue-50 border-blue-100 text-blue-800">
                             <AlertCircle className="h-4 w-4 text-blue-600" />
                             <AlertDescription>
@@ -248,11 +291,10 @@ export default function TutorInformation({ userId, userName, levelSlug }) {
                                     <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                                     <Input
                                         type="email"
+                                        disabled={!canEdit}
                                         value={contactInfo.personal_email}
                                         onChange={(e) => handleContactChange("personal_email", e.target.value)}
-                                        placeholder="tu-email@ejemplo.com"
-                                        disabled={!canEdit}
-                                        className="pl-9 border-slate-200 focus:border-blue-500"
+                                        className="pl-9 border-slate-200 focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
                                     />
                                 </div>
                                 <p className="text-xs text-slate-500">Usado para recuperación de contraseña</p>
@@ -264,11 +306,10 @@ export default function TutorInformation({ userId, userName, levelSlug }) {
                                     <Phone className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                                     <Input
                                         type="tel"
+                                        disabled={!canEdit}
                                         value={contactInfo.cell_phone}
                                         onChange={(e) => handleContactChange("cell_phone", e.target.value)}
-                                        placeholder="+52 55 1234 5678"
-                                        disabled={!canEdit}
-                                        className="pl-9 border-slate-200 focus:border-blue-500"
+                                        className="pl-9 border-slate-200 focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
                                     />
                                 </div>
                             </div>
@@ -279,11 +320,10 @@ export default function TutorInformation({ userId, userName, levelSlug }) {
                                     <Phone className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                                     <Input
                                         type="tel"
+                                        disabled={!canEdit}
                                         value={contactInfo.additional_phone}
                                         onChange={(e) => handleContactChange("additional_phone", e.target.value)}
-                                        placeholder="+52 55 8765 4321 (Opcional)"
-                                        disabled={!canEdit}
-                                        className="pl-9 border-slate-200 focus:border-blue-500"
+                                        className="pl-9 border-slate-200 focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
                                     />
                                 </div>
                             </div>
@@ -308,33 +348,30 @@ export default function TutorInformation({ userId, userName, levelSlug }) {
                             <div className="space-y-2 md:col-span-2">
                                 <Label className="text-slate-700">Calle y Número</Label>
                                 <Input
+                                    disabled={!canEdit}
                                     value={addressInfo.street_address}
                                     onChange={(e) => handleAddressChange("street_address", e.target.value)}
-                                    placeholder="Avenida Principal 123"
-                                    disabled={!canEdit}
-                                    className="border-slate-200 focus:border-blue-500"
+                                    className="border-slate-200 focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
                                 />
                             </div>
 
                             <div className="space-y-2">
                                 <Label className="text-slate-700">Colonia/Barrio</Label>
                                 <Input
+                                    disabled={!canEdit}
                                     value={addressInfo.neighborhood}
                                     onChange={(e) => handleAddressChange("neighborhood", e.target.value)}
-                                    placeholder="Centro"
-                                    disabled={!canEdit}
-                                    className="border-slate-200 focus:border-blue-500"
+                                    className="border-slate-200 focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
                                 />
                             </div>
 
                             <div className="space-y-2">
                                 <Label className="text-slate-700">Código Postal</Label>
                                 <Input
+                                    disabled={!canEdit}
                                     value={addressInfo.postal_code}
                                     onChange={(e) => handleAddressChange("postal_code", e.target.value)}
-                                    placeholder="12345"
-                                    disabled={!canEdit}
-                                    className="border-slate-200 focus:border-blue-500"
+                                    className="border-slate-200 focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
                                 />
                             </div>
                         </div>
@@ -358,22 +395,20 @@ export default function TutorInformation({ userId, userName, levelSlug }) {
                             <div className="space-y-2">
                                 <Label className="text-slate-700">Tipo de Sangre</Label>
                                 <Input
+                                    disabled={!canEdit}
                                     value={medicalInfo.blood_type}
                                     onChange={(e) => handleMedicalChange("blood_type", e.target.value)}
-                                    placeholder="Ej. O+"
-                                    disabled={!canEdit}
-                                    className="border-slate-200 focus:border-blue-500"
+                                    className="border-slate-200 focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
                                 />
                             </div>
 
                             <div className="space-y-2">
                                 <Label className="text-slate-700">Alergias</Label>
                                 <Input
+                                    disabled={!canEdit}
                                     value={medicalInfo.allergies}
                                     onChange={(e) => handleMedicalChange("allergies", e.target.value)}
-                                    placeholder="Ej. Penicilina, Polen (o 'Ninguna')"
-                                    disabled={!canEdit}
-                                    className="border-slate-200 focus:border-blue-500"
+                                    className="border-slate-200 focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
                                 />
                             </div>
                         </div>
