@@ -407,7 +407,11 @@ export default function StudentDashboard() {
           </TabsContent>
 
           <TabsContent value="attendance">
-            <AttendanceTab attendanceData={attendanceData} stats={attendanceStats} />
+            {isRestricted ? (
+                <RestrictedAccessMessage />
+            ) : (
+                <AttendanceTab attendanceData={attendanceData} stats={attendanceStats} />
+            )}
           </TabsContent>
 
           <TabsContent value="incidents">
