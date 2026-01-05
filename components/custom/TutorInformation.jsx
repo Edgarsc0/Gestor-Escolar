@@ -20,7 +20,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { SuccessModal } from "./SuccessDialog"
 import { LoadingOverlay } from "./LoadingOverlay"
 
-export default function TutorInformation({ userId, userName }) {
+export default function TutorInformation({ userId, userName, levelSlug }) {
     const { user } = useAuth()
     const effectiveUserId = userId || user?.id
     const isOwnProfile = !userId || (user && String(userId) === String(user.id))
@@ -59,6 +59,9 @@ export default function TutorInformation({ userId, userName }) {
         newPassword: "",
         confirmPassword: "",
     })
+
+    const isStudent = user?.role === 'student';
+    const canEdit = !isStudent || (isStudent && isOwnProfile);
 
     useEffect(() => {
         if (effectiveUserId) {
@@ -248,6 +251,7 @@ export default function TutorInformation({ userId, userName }) {
                                         value={contactInfo.personal_email}
                                         onChange={(e) => handleContactChange("personal_email", e.target.value)}
                                         placeholder="tu-email@ejemplo.com"
+                                        disabled={!canEdit}
                                         className="pl-9 border-slate-200 focus:border-blue-500"
                                     />
                                 </div>
@@ -263,6 +267,7 @@ export default function TutorInformation({ userId, userName }) {
                                         value={contactInfo.cell_phone}
                                         onChange={(e) => handleContactChange("cell_phone", e.target.value)}
                                         placeholder="+52 55 1234 5678"
+                                        disabled={!canEdit}
                                         className="pl-9 border-slate-200 focus:border-blue-500"
                                     />
                                 </div>
@@ -277,6 +282,7 @@ export default function TutorInformation({ userId, userName }) {
                                         value={contactInfo.additional_phone}
                                         onChange={(e) => handleContactChange("additional_phone", e.target.value)}
                                         placeholder="+52 55 8765 4321 (Opcional)"
+                                        disabled={!canEdit}
                                         className="pl-9 border-slate-200 focus:border-blue-500"
                                     />
                                 </div>
@@ -305,6 +311,7 @@ export default function TutorInformation({ userId, userName }) {
                                     value={addressInfo.street_address}
                                     onChange={(e) => handleAddressChange("street_address", e.target.value)}
                                     placeholder="Avenida Principal 123"
+                                    disabled={!canEdit}
                                     className="border-slate-200 focus:border-blue-500"
                                 />
                             </div>
@@ -315,6 +322,7 @@ export default function TutorInformation({ userId, userName }) {
                                     value={addressInfo.neighborhood}
                                     onChange={(e) => handleAddressChange("neighborhood", e.target.value)}
                                     placeholder="Centro"
+                                    disabled={!canEdit}
                                     className="border-slate-200 focus:border-blue-500"
                                 />
                             </div>
@@ -325,6 +333,7 @@ export default function TutorInformation({ userId, userName }) {
                                     value={addressInfo.postal_code}
                                     onChange={(e) => handleAddressChange("postal_code", e.target.value)}
                                     placeholder="12345"
+                                    disabled={!canEdit}
                                     className="border-slate-200 focus:border-blue-500"
                                 />
                             </div>
@@ -352,6 +361,7 @@ export default function TutorInformation({ userId, userName }) {
                                     value={medicalInfo.blood_type}
                                     onChange={(e) => handleMedicalChange("blood_type", e.target.value)}
                                     placeholder="Ej. O+"
+                                    disabled={!canEdit}
                                     className="border-slate-200 focus:border-blue-500"
                                 />
                             </div>
@@ -362,6 +372,7 @@ export default function TutorInformation({ userId, userName }) {
                                     value={medicalInfo.allergies}
                                     onChange={(e) => handleMedicalChange("allergies", e.target.value)}
                                     placeholder="Ej. Penicilina, Polen (o 'Ninguna')"
+                                    disabled={!canEdit}
                                     className="border-slate-200 focus:border-blue-500"
                                 />
                             </div>
@@ -465,18 +476,20 @@ export default function TutorInformation({ userId, userName }) {
                 </Card>
                 )}
 
-                <div className="flex justify-end pt-4 pb-10">
-                    <Button
-                        size="lg"
-                        disabled={!isModified}
-                        onClick={handleSaveChanges}
-                        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white shadow-sm disabled:bg-slate-300 min-w-[150px]"
-                    >
-                        {isSaving ? (
-                            <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Guardando...</>
-                        ) : "Guardar Todos los Cambios"}
-                    </Button>
-                </div>
+                {canEdit && (
+                    <div className="flex justify-end pt-4 pb-10">
+                        <Button
+                            size="lg"
+                            disabled={!isModified}
+                            onClick={handleSaveChanges}
+                            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white shadow-sm disabled:bg-slate-300 min-w-[150px]"
+                        >
+                            {isSaving ? (
+                                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Guardando...</>
+                            ) : "Guardar Todos los Cambios"}
+                        </Button>
+                    </div>
+                )}
 
                 <Dialog open={errorDialog.isOpen} onOpenChange={(open) => setErrorDialog(prev => ({ ...prev, isOpen: open }))}>
                     <DialogContent>

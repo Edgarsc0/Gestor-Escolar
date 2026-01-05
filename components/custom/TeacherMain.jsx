@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Layers, ChevronDown, ChevronUp, Save, Loader2, CalendarDays, BookCopy, FileText, Search, AlertTriangle } from "lucide-react"
+import { Layers, ChevronDown, ChevronUp, Save, Loader2, CalendarDays, BookCopy, FileText, Search, AlertTriangle, UserCheck, Check, X, Clock, FileDown } from "lucide-react"
 import TutorInformation from "./TutorInformation" 
 import { SuccessModal } from "./SuccessDialog"
 import { LoadingOverlay } from "./LoadingOverlay"
@@ -120,6 +120,12 @@ export default function TeacherMain() {
     const [incidentData, setIncidentData] = useState({ studentId: null, studentName: "" });
     const [incidentForm, setIncidentForm] = useState({ type: null, date: '', description: '' });
     const [isSavingIncident, setIsSavingIncident] = useState(false);
+
+    const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
+    const [selectedClassForAttendance, setSelectedClassForAttendance] = useState(null);
+    const [attendanceList, setAttendanceList] = useState([]);
+    const [isSavingAttendance, setIsSavingAttendance] = useState(false);
+    const [attendanceViewMode, setAttendanceViewMode] = useState('day');
 
     useEffect(() => {
         const view = searchParams.get('view');
@@ -394,15 +400,136 @@ export default function TeacherMain() {
         }
     };
 
+    const getDayName = (dateStr) => {
+        const date = new Date(dateStr + 'T12:00:00'); 
+        const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+        return days[date.getDay()];
+    }
+
+    const handleClassSelectForAttendance = async (classItem) => {
+        setSelectedClassForAttendance(classItem);
+        setIsLoading(true);
+        try {
+            const group = groups.find(g => g.id === classItem.group_id);
+            
+            // Si el grupo no está cargado en 'groups' (por alguna razón), intentamos buscarlo o fallamos
+            // Asumimos que 'groups' tiene todos los grupos del profesor con sus estudiantes cargados
+            
+            const res = await fetch(`/api/attendance?group_id=${classItem.group_id}&subject_id=${classItem.subject_id}&date=${attendanceDate}`);
+            let existingAttendance = [];
+            if (res.ok) {
+                existingAttendance = await res.json();
+            }
+
+            const studentsList = group ? group.students : [];
+            
+            const initialList = studentsList.map(student => {
+                const existing = existingAttendance.find(a => a.student_id === student.id);
+                return {
+                    student_id: student.id,
+                    student_name: student.full_name,
+                    status: existing ? existing.status : 'presente'
+                };
+            });
+            
+            setAttendanceList(initialList.sort((a, b) => a.student_name.localeCompare(b.student_name)));
+        } catch (e) {
+            console.error(e);
+            setErrorDialog({ isOpen: true, title: "Error", description: "No se pudo cargar la lista de asistencia." });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    const setAttendanceStatus = (studentId, status) => {
+        setAttendanceList(prev => prev.map(item => item.student_id === studentId ? { ...item, status } : item));
+    }
+
+    const markAllAttendance = (status) => {
+        setAttendanceList(prev => prev.map(item => ({ ...item, status })));
+    }
+
+    const saveAttendance = async () => {
+        setIsSavingAttendance(true);
+        try {
+            const payload = {
+                teacher_id: user.id,
+                group_id: selectedClassForAttendance.group_id,
+                subject_id: selectedClassForAttendance.subject_id,
+                date: attendanceDate,
+                students: attendanceList.map(a => ({ student_id: a.student_id, status: a.status }))
+            };
+            
+            const res = await fetch('/api/attendance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            if (res.ok) {
+                setSuccessMessage("Asistencia guardada correctamente");
+                setShowSuccessDialog(true);
+                setSelectedClassForAttendance(null);
+            } else {
+                throw new Error("Error al guardar");
+            }
+        } catch(e) {
+            setErrorDialog({ isOpen: true, title: "Error", description: "No se pudo guardar la asistencia." });
+        } finally {
+            setIsSavingAttendance(false);
+        }
+    }
+
+    const handleDownloadTeacherReport = async () => {
+        if (!user?.id) return;
+        try {
+            const res = await fetch(`/api/attendance?teacher_id=${user.id}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.length === 0) {
+                    setErrorDialog({ isOpen: true, title: "Sin datos", description: "No hay registros de asistencia para descargar." });
+                    return;
+                }
+                
+                const headers = ["Fecha", "Grupo", "Materia", "Alumno", "Estado"];
+                const rows = data.map(item => [
+                    new Date(item.date).toLocaleDateString('es-MX'),
+                    item.group_name || "Sin grupo",
+                    item.subject_name || "Sin materia",
+                    item.student_name || "Desconocido",
+                    item.status
+                ]);
+                
+                const csvContent = [
+                    headers.join(","),
+                    ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+                ].join("\n");
+                
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", `Reporte_General_Asistencia_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        } catch (error) {
+            console.error("Error downloading report:", error);
+            setErrorDialog({ isOpen: true, title: "Error", description: "No se pudo descargar el reporte." });
+        }
+    }
+
     return (
         <div className="min-h-screen bg-slate-50/50 p-6 pt-10">
-            {(isLoading || isSavingGrades) && <LoadingOverlay message={isSavingGrades ? "Guardando calificaciones..." : "Cargando panel docente..."} />}
+            {(isLoading || isSavingGrades || isSavingAttendance) && <LoadingOverlay message={isSavingGrades ? "Guardando calificaciones..." : isSavingAttendance ? "Guardando asistencia..." : "Cargando panel docente..."} />}
             
             <div className="max-w-7xl mx-auto">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-5 max-w-4xl mx-auto">
+                    <TabsList className="grid w-full grid-cols-6 max-w-5xl mx-auto">
                         <TabsTrigger value="groups">Mis Grupos</TabsTrigger>
                         <TabsTrigger value="schedule">Mi Horario</TabsTrigger>
+                        <TabsTrigger value="attendance">Asistencia</TabsTrigger>
                         <TabsTrigger value="grades">Calificaciones</TabsTrigger>
                         <TabsTrigger value="incidents">Incidencias</TabsTrigger>
                         <TabsTrigger value="profile">Mi Perfil</TabsTrigger>
@@ -495,6 +622,155 @@ export default function TeacherMain() {
                             </CardHeader>
                             <CardContent>
                                 <TeacherScheduleGrid schedule={schedule} />
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="attendance" className="mt-6">
+                        <Card>
+                            <CardHeader>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <CardTitle className="flex items-center gap-2">
+                                            <UserCheck className="h-5 w-5 text-blue-600" />
+                                            Pase de Lista
+                                        </CardTitle>
+                                        <CardDescription>Registra la asistencia de tus grupos de manera rápida.</CardDescription>
+                                    </div>
+                                    <Button variant="outline" onClick={handleDownloadTeacherReport} className="gap-2 text-slate-600">
+                                        <FileDown className="h-4 w-4" />
+                                        Reporte General
+                                    </Button>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                {!selectedClassForAttendance ? (
+                                    <div className="space-y-6">
+                                        <div className="flex justify-center space-x-4">
+                                            <Button 
+                                                variant={attendanceViewMode === 'day' ? "default" : "outline"}
+                                                onClick={() => setAttendanceViewMode('day')}
+                                                className="w-40"
+                                            >
+                                                Por Día
+                                            </Button>
+                                            <Button 
+                                                variant={attendanceViewMode === 'all' ? "default" : "outline"}
+                                                onClick={() => setAttendanceViewMode('all')}
+                                                className="w-40"
+                                            >
+                                                Todas las Clases
+                                            </Button>
+                                        </div>
+
+                                        <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-lg border border-slate-100">
+                                            <Label className="whitespace-nowrap">Fecha de Asistencia:</Label>
+                                            <Input 
+                                                type="date" 
+                                                value={attendanceDate} 
+                                                onChange={(e) => setAttendanceDate(e.target.value)}
+                                                className="w-auto bg-white"
+                                            />
+                                            <Badge variant="outline" className="ml-2">
+                                                {getDayName(attendanceDate)}
+                                            </Badge>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {(attendanceViewMode === 'day' 
+                                                ? schedule.filter(s => s.day_of_week === getDayName(attendanceDate))
+                                                : schedule
+                                            ).map((classItem, idx) => {
+                                                const group = groups.find(g => g.id === classItem.group_id);
+                                                return (
+                                                <Card 
+                                                    key={idx} 
+                                                    className="cursor-pointer hover:shadow-md hover:border-blue-300 transition-all"
+                                                    onClick={() => handleClassSelectForAttendance(classItem)}
+                                                >
+                                                    <CardContent className="p-5">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <Badge>{classItem.start_time.substring(0, 5)} - {classItem.end_time.substring(0, 5)}</Badge>
+                                                            <div className="flex flex-col items-end gap-1">
+                                                                <Badge variant="outline">{classItem.group_name}</Badge>
+                                                                {group?.level_name && (
+                                                                    <Badge variant="secondary" className="text-[10px] px-1.5 h-5">
+                                                                        {group.level_name}
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <h3 className="font-bold text-lg text-slate-800 mb-1">{classItem.subject_name}</h3>
+                                                        <div className="flex justify-between items-center mt-2">
+                                                            <p className="text-sm text-slate-500">Click para pasar lista</p>
+                                                            {attendanceViewMode === 'all' && (
+                                                                <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded">
+                                                                    {classItem.day_of_week}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            )})}
+                                            {attendanceViewMode === 'day' && schedule.filter(s => s.day_of_week === getDayName(attendanceDate)).length === 0 && (
+                                                <div className="col-span-full text-center py-12 text-slate-500 border-2 border-dashed rounded-lg">
+                                                    <CalendarDays className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                                                    <p>No hay clases programadas para este día.</p>
+                                                </div>
+                                            )}
+                                            {attendanceViewMode === 'all' && schedule.length === 0 && (
+                                                <div className="col-span-full text-center py-12 text-slate-500 border-2 border-dashed rounded-lg">
+                                                    <CalendarDays className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                                                    <p>No tienes clases asignadas.</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-6">
+                                        <div className="flex items-center justify-between bg-slate-50 p-4 rounded-lg border border-slate-100">
+                                            <div>
+                                                <h3 className="font-bold text-lg">{selectedClassForAttendance.subject_name} - {selectedClassForAttendance.group_name}</h3>
+                                                <p className="text-sm text-slate-500">{getDayName(attendanceDate)}, {attendanceDate}</p>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <Button variant="outline" onClick={() => setSelectedClassForAttendance(null)}>Cancelar</Button>
+                                                <Button onClick={saveAttendance} className="bg-blue-600 hover:bg-blue-700">Guardar Asistencia</Button>
+                                            </div>
+                                        </div>
+
+                                        <div className="border rounded-lg overflow-hidden">
+                                            <div className="bg-slate-100 p-2 flex justify-end gap-2 border-b">
+                                                <span className="text-xs font-medium text-slate-500 self-center mr-2">Marcar todos como:</span>
+                                                <Button size="sm" variant="outline" onClick={() => markAllAttendance('presente')} className="h-7 text-xs bg-white text-green-700 border-green-200 hover:bg-green-50">Presente</Button>
+                                                <Button size="sm" variant="outline" onClick={() => markAllAttendance('retardo')} className="h-7 text-xs bg-white text-amber-700 border-amber-200 hover:bg-amber-50">Retardo</Button>
+                                                <Button size="sm" variant="outline" onClick={() => markAllAttendance('falta')} className="h-7 text-xs bg-white text-red-700 border-red-200 hover:bg-red-50">Falta</Button>
+                                            </div>
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead>Alumno</TableHead>
+                                                        <TableHead className="text-center w-[300px]">Estado</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {attendanceList.map((student) => (
+                                                        <TableRow key={student.student_id}>
+                                                            <TableCell className="font-medium">{student.student_name}</TableCell>
+                                                            <TableCell className="text-center">
+                                                                <div className="flex justify-center gap-1">
+                                                                    <Button size="sm" variant={student.status === 'presente' ? "default" : "outline"} onClick={() => setAttendanceStatus(student.student_id, 'presente')} className={`w-24 ${student.status === 'presente' ? 'bg-green-600 hover:bg-green-700' : 'text-slate-500'}`}><Check className="h-3 w-3 mr-1" /> Presente</Button>
+                                                                    <Button size="sm" variant={student.status === 'retardo' ? "default" : "outline"} onClick={() => setAttendanceStatus(student.student_id, 'retardo')} className={`w-24 ${student.status === 'retardo' ? 'bg-amber-500 hover:bg-amber-600' : 'text-slate-500'}`}><Clock className="h-3 w-3 mr-1" /> Retardo</Button>
+                                                                    <Button size="sm" variant={student.status === 'falta' ? "default" : "outline"} onClick={() => setAttendanceStatus(student.student_id, 'falta')} className={`w-24 ${student.status === 'falta' ? 'bg-red-600 hover:bg-red-700' : 'text-slate-500'}`}><X className="h-3 w-3 mr-1" /> Falta</Button>
+                                                                </div>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     </TabsContent>

@@ -18,14 +18,16 @@ const menuLinks = {
     Docente: [
         { href: "/teacher?view=groups", text: "Mis grupos" },
         { href: "/teacher?view=grades", text: "Calificaciones" },
+        { href: "/teacher?view=attendance", text: "Asistencia" },
         { href: "/teacher?view=schedule", text: "Horario" },
         { href: "/teacher?view=incidents", text: "Incidencias" },
     ],
     Estudiante: [
-        { href: "/home", text: "Inicio" },
-        { href: "/grades", text: "Calificaciones" },
-        { href: "/schedule", text: "Horario" },
-        { href: "/re-enrollment", text: "Reinscripción" },
+        { href: "/student?view=academic", text: "Académico" },
+        { href: "/student?view=schedule", text: "Horario" },
+        { href: "/student?view=attendance", text: "Asistencia" },
+        { href: "/student?view=incidents", text: "Incidencias" },
+        { href: "/student?view=profile", text: "Perfil" },
     ],
     Tutor: [
         { href: "/", text: "Inicio" },
@@ -42,7 +44,7 @@ const NavLink = ({ href, children }) => (
 const UserMenu = ({ userType, grado, params }) => {
     let links = menuLinks[userType] || [];
 
-    if (userType === "Estudiante" && ["Preparatoria", "Universidad"].includes(grado)) {
+    if (userType === "Estudiante" && ["Preparatoria", "Universidad"].includes(grado) && false) { // Disabled extra link for now
         links = [...links, { href: "/documents", text: "Documentos" }];
     }
 
@@ -51,6 +53,7 @@ const UserMenu = ({ userType, grado, params }) => {
             { href: "/padre_tutor", text: "Mis Hijos" },
             { href: `/padre_tutor/${params.son}?view=academic`, text: "Académico" },
             { href: `/padre_tutor/${params.son}?view=schedule`, text: "Horario" },
+            { href: `/padre_tutor/${params.son}?view=attendance`, text: "Asistencia" },
             { href: `/padre_tutor/${params.son}?view=incidents`, text: "Incidencias" },
             { href: `/padre_tutor/${params.son}?view=kardex`, text: "Kardex" },
         ];
@@ -67,6 +70,9 @@ const MiPerfil = (userType) => {
     }
     if (userType === "Docente") {
         return "/teacher?view=profile";
+    }
+    if (userType === "Estudiante") {
+        return "/student?view=profile";
     }
     if (userType === "Administrador") {
         return "/admin/info";

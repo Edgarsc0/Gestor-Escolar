@@ -57,7 +57,7 @@ export default function IncidentsTab({ incidents, onJustify, onAcknowledge }) {
                                         {incident.subject}
                                     </p>
                                 </div>
-                                {user?.role === 'tutor' && incident.status === "Pendiente" && (
+                                {(user?.role === 'tutor' || user?.role === 'student') && incident.status === "Pendiente" && (
                                     <div className="ml-4">
                                         {["Falta", "Retardo"].includes(incident.type) ? (
                                             <Button
@@ -138,7 +138,7 @@ export default function IncidentsTab({ incidents, onJustify, onAcknowledge }) {
                 </div>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setSelectedIncident(null)}>Cerrar</Button>
-                    {user?.role === 'tutor' && selectedIncident?.status === "Pendiente" && (
+                    {(user?.role === 'tutor' || user?.role === 'student') && selectedIncident?.status === "Pendiente" && (
                         ["Falta", "Retardo"].includes(selectedIncident.type) ? (
                             <Button 
                                 onClick={() => {

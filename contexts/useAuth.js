@@ -42,7 +42,7 @@ export function AuthProvider({ children }) {
                 // Redirección basada en el rol
                 if (data.user.role === 'admin') router.push('/admin');
                 else if (data.user.role === 'teacher') router.push('/teacher');
-                else if (data.user.role === 'student') router.push('/student'); // Ajusta según tus rutas
+                else if (data.user.role === 'student') router.push('/student'); 
                 else if (data.user.role === 'tutor') router.push('/padre_tutor');
                 else router.push('/');
                 

@@ -15,7 +15,8 @@ import ProfileTab from "./ProfileTab"
 import JustificationDialog from "./JustificationDialog"
 import { LoadingOverlay } from "./LoadingOverlay"
 import KardexTab from "./KardexTab"
-import { AlertCircle } from "lucide-react"
+import AttendanceTab from "./AttendanceTab"
+import { AlertCircle, FileDown } from "lucide-react"
 
 export default function StudentDashboard() {
   const { user } = useAuth()
@@ -40,11 +41,14 @@ export default function StudentDashboard() {
   const [refreshIncidents, setRefreshIncidents] = useState(0)
   const [kardexData, setKardexData] = useState([])
   const [isLoadingKardex, setIsLoadingKardex] = useState(false)
+  const [attendanceData, setAttendanceData] = useState([])
+  const [attendanceStats, setAttendanceStats] = useState({ percentage: null, present: 0, absent: 0, delay: 0, justified: 0, total: 0 })
+  const [isLoadingAttendance, setIsLoadingAttendance] = useState(false)
   const [errorDialog, setErrorDialog] = useState({ isOpen: false, title: "", description: "" })
 
-  const studentId = params?.son;
+  const studentId = user?.role === 'student' ? user.id : params?.son;
 
-  const showKardex = user?.role === 'tutor'
+  const showKardex = user?.role === 'tutor' || user?.role === 'student'
 
   useEffect(() => {
     const view = searchParams.get('view');
@@ -87,6 +91,33 @@ export default function StudentDashboard() {
     }
     fetchChildren();
   }, [user, params]);
+
+  useEffect(() => {
+    const fetchStudentDetails = async () => {
+        if (user?.role === 'student') {
+            setIsLoadingChildren(true);
+            try {
+                // Intentar obtener información del grupo para saber el nivel
+                const groupRes = await fetch(`/api/groups/student/${user.id}`);
+                let groupInfo = {};
+                if (groupRes.ok) {
+                    const groups = await groupRes.json();
+                    if (groups.length > 0) groupInfo = groups[0];
+                }
+                
+                setCurrentChild({
+                    student_id: user.id,
+                    student_name: user.full_name,
+                    group_name: groupInfo.name,
+                    level_name: groupInfo.level_name,
+                    level_slug: groupInfo.level_slug
+                });
+            } catch (e) { console.error(e); } 
+            finally { setIsLoadingChildren(false); }
+        }
+    }
+    fetchStudentDetails();
+  }, [user]);
 
   useEffect(() => {
     const fetchGrades = async () => {
@@ -182,6 +213,41 @@ export default function StudentDashboard() {
     fetchKardex()
   }, [studentId])
 
+  useEffect(() => {
+    const fetchAttendance = async () => {
+        if (!studentId) return
+        setIsLoadingAttendance(true)
+        try {
+            const res = await fetch(`/api/attendance?student_id=${studentId}`)
+            if (res.ok) {
+                const data = await res.json()
+                setAttendanceData(data)
+                
+                const total = data.length
+                if (total > 0) {
+                    const present = data.filter(a => a.status === 'presente').length
+                    const absent = data.filter(a => a.status === 'falta').length
+                    const delay = data.filter(a => a.status === 'retardo').length
+                    const justified = data.filter(a => a.status === 'justificado').length
+                    
+                    // Calculation: (Total - Absent) / Total * 100
+                    const effectiveAttendance = total - absent
+                    const percentage = ((effectiveAttendance / total) * 100).toFixed(1)
+                    
+                    setAttendanceStats({ percentage, present, absent, delay, justified, total })
+                } else {
+                     setAttendanceStats({ percentage: null, present: 0, absent: 0, delay: 0, justified: 0, total: 0 })
+                }
+            }
+        } catch (error) {
+            console.error("Error fetching attendance:", error)
+        } finally {
+            setIsLoadingAttendance(false)
+        }
+    }
+    fetchAttendance()
+  }, [studentId])
+
   const handleJustify = (incident) => {
     setSelectedIncident(incident)
     setJustificationDialogOpen(true)
@@ -209,12 +275,56 @@ export default function StudentDashboard() {
 
   const handleTabChange = (value) => {
     setActiveTab(value);
-    router.push(`/padre_tutor/${studentId}?view=${value}`, { scroll: false });
+    if (user?.role === 'student') {
+      router.push(`/student?view=${value}`, { scroll: false });
+    } else {
+      router.push(`/padre_tutor/${studentId}?view=${value}`, { scroll: false });
+    }
   };
+
+  const handleDownloadAttendance = async () => {
+    if (!studentId) return;
+    try {
+        const res = await fetch(`/api/attendance?student_id=${studentId}`);
+        if (res.ok) {
+            const data = await res.json();
+            if (data.length === 0) {
+                setErrorDialog({ isOpen: true, title: "Sin datos", description: "No hay registros de asistencia para descargar." });
+                return;
+            }
+            
+            // Generar CSV
+            const headers = ["Fecha", "Materia", "Profesor", "Estado"];
+            const rows = data.map(item => [
+                new Date(item.date).toLocaleDateString('es-MX'),
+                item.subject_name || "Desconocida",
+                item.teacher_name || "Sin asignar",
+                item.status
+            ]);
+            
+            const csvContent = [
+                headers.join(","),
+                ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+            ].join("\n");
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Reporte_Asistencia_${currentChild?.student_name || 'Alumno'}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    } catch (error) {
+        console.error("Error downloading attendance:", error);
+        setErrorDialog({ isOpen: true, title: "Error", description: "No se pudo descargar el reporte." });
+    }
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 mt-10">
-      {(isLoadingChildren || isLoadingGrades || isLoadingSchedule || isLoadingIncidents || isLoadingKardex) && <LoadingOverlay message="Cargando información del alumno..." />}
+      {(isLoadingChildren || isLoadingGrades || isLoadingSchedule || isLoadingIncidents || isLoadingKardex || isLoadingAttendance) && <LoadingOverlay message="Cargando información del alumno..." />}
       
       {/* Header Section */}
       <DashboardHeader
@@ -225,14 +335,22 @@ export default function StudentDashboard() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex justify-end mb-4">
+             <Button variant="outline" onClick={handleDownloadAttendance} className="gap-2 bg-white border-slate-200 hover:bg-slate-50 text-slate-700">
+                <FileDown className="h-4 w-4" />
+                Descargar Reporte de Asistencia
+             </Button>
+        </div>
+
         {/* KPI Cards */}
         <DashboardKPIs subjects={subjects} scheduleData={scheduleData} incidents={incidents} />
 
         {/* Tabs Section */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className={`grid w-full ${showKardex ? "grid-cols-5" : "grid-cols-4"}`} >
+          <TabsList className={`grid w-full ${showKardex ? "grid-cols-6" : "grid-cols-5"}`} >
             <TabsTrigger value="academic">Académico</TabsTrigger>
             <TabsTrigger value="schedule">Horario</TabsTrigger>
+            <TabsTrigger value="attendance">Asistencia</TabsTrigger>
             <TabsTrigger value="incidents">Incidencias</TabsTrigger>
             {showKardex && <TabsTrigger value="kardex">Kardex</TabsTrigger>}
             <TabsTrigger value="profile">Perfil</TabsTrigger>
@@ -245,6 +363,10 @@ export default function StudentDashboard() {
 
           <TabsContent value="schedule">
             <ScheduleTab classes={scheduleData} isLoading={isLoadingSchedule} />
+          </TabsContent>
+
+          <TabsContent value="attendance">
+            <AttendanceTab attendanceData={attendanceData} stats={attendanceStats} />
           </TabsContent>
 
           {/* Tab B: Incidents */}
@@ -260,7 +382,11 @@ export default function StudentDashboard() {
 
           {/* Tab C: Profile */}
           <TabsContent value="profile">
-            <ProfileTab studentId={params?.son || user?.id} studentName={currentChild?.student_name} />
+            <ProfileTab 
+                studentId={studentId} 
+                studentName={currentChild?.student_name} 
+                levelSlug={currentChild?.level_slug}
+            />
           </TabsContent>
         </Tabs>
       </main>
