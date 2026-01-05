@@ -69,46 +69,45 @@ export default function TutorInformation({ userId, userName, levelSlug }) {
     }, [levelSlug])
 
     const canEdit = useMemo(() => {
-        if (!user) return false;
+        // 1. Validaciones básicas
+        if (!user) return false; 
 
         const userRole = (user.role || "").trim().toLowerCase();
         
-        // --- NUEVA REGLA: SI ES TUTOR Y ES SU PROPIO PERFIL ---
-        // Los tutores siempre pueden editar sus propios datos (teléfono, etc.)
-        // sin importar el nivel escolar (porque no son alumnos).
-        if (isOwnProfile && ["padre", "tutor", "madre"].includes(userRole)) {
-            console.log("✅ Permiso concedido: Tutor editando su propio perfil.");
+        // --- CASO 1: DOCENTE / MAESTRO (NUEVO) ---
+        // Los docentes siempre pueden editar su propia información de contacto.
+        if (["docente", "maestro", "profesor", "teacher"].includes(userRole)) {
+            console.log("✅ Permiso concedido: Es Docente.");
             return true;
         }
-        // -----------------------------------------------------
 
+        // --- CASO 2: ADMIN ---
+        if (["admin", "administrador"].includes(userRole)) return true;
+
+        // --- CASO 3: TUTOR EDITANDO SU PROPIO PERFIL ---
+        if (isOwnProfile && ["padre", "tutor", "madre"].includes(userRole)) {
+            return true;
+        }
+        
+        // ... (Aquí sigue el resto de tu lógica para Alumnos y Tutores de alumnos) ...
         const currentLevel = String(studentLevel || "").trim().toLowerCase();
         
-        // ... (El resto de tu lógica para Alumnos o para Tutor editando Alumno sigue igual)
-        
-        // Lista de niveles (para cuando un alumno ve su perfil o un tutor ve a su hijo)
-        const basicLevels = ["kinder", "kínder", "preescolar", "primaria", "secundaria", "básica"];
-        const superiorLevels = ["prepa", "bachillerato", "preparatoria", "universidad", "licenciatura", "ingeniería", "tsu", "superior"];
+        const basicLevels = ["kinder", "kínder", "preescolar", "primaria", "secundaria", "básica", "basica"];
+        const superiorLevels = ["prepa", "bachillerato", "preparatoria", "universidad", "licenciatura", "ingeniería", "superior"];
 
-        console.log("🔍 DEBUG PERMISOS:", { rol: userRole, nivel: currentLevel, isOwn: isOwnProfile });
-
-        // LÓGICA TUTOR EDITANDO A HIJO (Ya no entra aquí si es su propio perfil gracias al if de arriba)
+        // LÓGICA TUTOR (Viéndolo desde el Dashboard de un hijo)
         if (["padre", "tutor", "madre"].includes(userRole)) {
             if (!currentLevel) return false; 
             return basicLevels.some(l => currentLevel.includes(l));
         }
 
-        // LÓGICA ALUMNO EDITANDO SU PERFIL
+        // LÓGICA ALUMNO
         if (["alumno", "estudiante", "student"].includes(userRole)) {
-            // Si eres alumno, NECESITAMOS saber tu nivel.
-            // Si la prop viene vacía, dependemos de que la API lo traiga (Paso 2).
             return superiorLevels.some(l => currentLevel.includes(l));
         }
 
-        if (userRole.includes("admin")) return true;
-
         return false;
-    }, [user, studentLevel, isOwnProfile]); // <--- AGREGAR isOwnProfile AQUÍ
+        }, [user, studentLevel, isOwnProfile]);
 
     useEffect(() => {
         if (effectiveUserId) {
