@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -17,8 +17,9 @@ import { GroupsView } from "./GroupsView"
 import { TeachersView } from "./TeachersView"
 import { RelationshipsView } from "./RelationshipsView"
 import { SubjectsView } from "./SubjectsView"
+import { LoadingOverlay } from "@/components/custom/LoadingOverlay"
 
-export default function AdminDashboard() {
+function AdminDashboardContent() {
     const searchParams = useSearchParams()
     const initialView = searchParams.get('view') || "dashboard"
     const [activeView, setActiveView] = useState(initialView)
@@ -151,5 +152,13 @@ export default function AdminDashboard() {
                 </DialogContent>
             </Dialog>
         </div>
+    )
+}
+
+export default function AdminDashboard() {
+    return (
+        <Suspense fallback={<LoadingOverlay message="Cargando panel de administración..." />}>
+            <AdminDashboardContent />
+        </Suspense>
     )
 }

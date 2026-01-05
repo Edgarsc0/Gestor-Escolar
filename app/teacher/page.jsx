@@ -1,7 +1,11 @@
+import { Suspense } from "react"
 import TeacherMain from "@/components/custom/TeacherMain";
+import { LoadingOverlay } from "@/components/custom/LoadingOverlay";
 
 export default function TeacherPage() {
     return (
-        <TeacherMain />
+        <Suspense fallback={<LoadingOverlay message="Cargando panel docente..." />}>
+            <TeacherMain />
+        </Suspense>
     );
 }
