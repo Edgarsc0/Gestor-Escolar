@@ -15,10 +15,11 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import { User, Mail, Phone, MapPin, Lock, AlertCircle, Loader2, Heart, Info } from "lucide-react"
+import { User, Mail, Phone, MapPin, Lock, AlertCircle, Loader2, Heart, Info, Shield } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { SuccessModal } from "./SuccessDialog"
 import { LoadingOverlay } from "./LoadingOverlay"
+import { EmergencyContactsManager } from "./EmergencyContactsManager"
 
 export default function TutorInformation({ userId, userName, levelSlug }) {
     const { user } = useAuth()
@@ -440,6 +441,23 @@ export default function TutorInformation({ userId, userName, levelSlug }) {
                                 />
                             </div>
                         </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-slate-200 shadow-sm bg-white">
+                    <CardHeader className="border-b border-slate-100 pb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-lg bg-orange-50 flex items-center justify-center">
+                                <Shield className="h-5 w-5 text-orange-600" />
+                            </div>
+                            <div>
+                                <CardTitle className="text-base font-medium text-slate-900">Contactos de Emergencia</CardTitle>
+                                <CardDescription>Personas a contactar en caso de una emergencia</CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                        <EmergencyContactsManager userId={effectiveUserId} readOnly={!canEdit} />
                     </CardContent>
                 </Card>
 

@@ -187,6 +187,7 @@ const querys = {
         // -------------------
 
         update: "UPDATE personal_info SET personal_email = COALESCE($2, personal_email), cell_phone = COALESCE($3, cell_phone), additional_phone = COALESCE($4, additional_phone), street_address = COALESCE($5, street_address), neighborhood = COALESCE($6, neighborhood), postal_code = COALESCE($7, postal_code), blood_type = COALESCE($8, blood_type), allergies = COALESCE($9, allergies), updated_at = CURRENT_TIMESTAMP WHERE user_id = $1 RETURNING *",
+        checkPersonalEmail: "SELECT id FROM personal_info WHERE personal_email = $1",
         fixSequence: "SELECT setval(pg_get_serial_sequence('personal_info', 'id'), (SELECT MAX(id) FROM personal_info))"
     },
     subjects: {
@@ -209,8 +210,8 @@ const querys = {
             WHERE s.academic_level_id = $1
             ORDER BY s.name ASC
         `,
-        create: "INSERT INTO subjects (name, academic_level_id, description) VALUES ($1, $2, $3) RETURNING *",
-        update: "UPDATE subjects SET name = $1, academic_level_id = $2, description = $3 WHERE id = $4 RETURNING *",
+        create: "INSERT INTO subjects (name, academic_level_id, description, creditos) VALUES ($1, $2, $3, $4) RETURNING *",
+        update: "UPDATE subjects SET name = $1, academic_level_id = $2, description = $3, creditos = $4 WHERE id = $5 RETURNING *",
         delete: "DELETE FROM subjects WHERE id = $1 RETURNING id",
         fixSequence: "SELECT setval(pg_get_serial_sequence('subjects', 'id'), (SELECT MAX(id) FROM subjects))",
         checkUsage: `
@@ -355,6 +356,13 @@ const querys = {
         getRecent: `
             SELECT l.*, u.full_name as user_name FROM activity_logs l LEFT JOIN users u ON l.user_id = u.id ORDER BY l.created_at DESC LIMIT 50;
         `
+    },
+    emergencyContacts: {
+        create: "INSERT INTO emergency_contacts (user_id, contact_name, relationship, phone_number) VALUES ($1, $2, $3, $4) RETURNING *",
+        getByUserId: "SELECT * FROM emergency_contacts WHERE user_id = $1 ORDER BY id ASC",
+        update: "UPDATE emergency_contacts SET contact_name = $1, relationship = $2, phone_number = $3 WHERE id = $4 RETURNING *",
+        delete: "DELETE FROM emergency_contacts WHERE id = $1 RETURNING id",
+        fixSequence: "SELECT setval(pg_get_serial_sequence('emergency_contacts', 'id'), (SELECT MAX(id) FROM emergency_contacts))"
     }
 };
 

@@ -9,7 +9,7 @@ const getUserId = async (req) => {
         try {
             const { payload } = await jwtVerify(token.value, secret);
             return payload.id;
-        } catch {}
+        } catch { }
     }
     return null;
 };
@@ -38,7 +38,7 @@ export default class SubjectController {
 
     getById = async (req, { params }) => {
         try {
-            const { id } = params;
+            const { id } = await params;
             const subject = await this.service.getSubjectById(id);
             return NextResponse.json(subject);
         } catch (error) {
@@ -60,7 +60,7 @@ export default class SubjectController {
 
     update = async (req, { params }) => {
         try {
-            const { id } = params;
+            const { id } = await params;
             const body = await req.json();
             const adminId = await getUserId(req);
             const updatedSubject = await this.service.update(id, body, adminId);
@@ -73,7 +73,7 @@ export default class SubjectController {
 
     delete = async (req, { params }) => {
         try {
-            const { id } = params;
+            const { id } = await params;
             const adminId = await getUserId(req);
             const result = await this.service.delete(id, adminId);
             return NextResponse.json(result);

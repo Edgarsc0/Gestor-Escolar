@@ -18,6 +18,7 @@ import { SuccessModal } from "@/components/custom/SuccessDialog"
 export function SubjectsView() {
     const [subjects, setSubjects] = useState([])
     const [academicLevels, setAcademicLevels] = useState([])
+    const [selectedLevelFilter, setSelectedLevelFilter] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [editingSubject, setEditingSubject] = useState(null)
@@ -28,13 +29,18 @@ export function SubjectsView() {
 
     useEffect(() => {
         fetchData()
-    }, [])
+    }, [selectedLevelFilter])
 
     const fetchData = async () => {
         setIsLoading(true)
         try {
+            let url = '/api/subjects'
+            if (selectedLevelFilter) {
+                url += `?academic_level_id=${selectedLevelFilter.value}`
+            }
+
             const [subjectsRes, levelsRes] = await Promise.all([
-                fetch('/api/subjects'),
+                fetch(url),
                 fetch('/api/AcademicLevels')
             ])
             if (subjectsRes.ok) setSubjects(await subjectsRes.json())
@@ -56,6 +62,7 @@ export function SubjectsView() {
             name: formData.get("name"),
             academic_level_id: formData.get("academic_level_id"),
             description: formData.get("description"),
+            creditos: formData.get("creditos") || 7,
         }
 
         setIsSaving(true)
@@ -126,10 +133,22 @@ export function SubjectsView() {
                         <BookOpen className="h-5 w-5 text-blue-600" />
                         <CardTitle className="text-lg font-medium">Gestión de Materias</CardTitle>
                     </div>
-                    <Button onClick={openNewDialog} className="bg-blue-600 hover:bg-blue-700">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Nueva Materia
-                    </Button>
+                    <div className="flex items-center gap-3">
+                        <div className="w-64">
+                            <ReactSelect
+                                options={levelOptions}
+                                value={selectedLevelFilter}
+                                onChange={setSelectedLevelFilter}
+                                placeholder="Filtrar por nivel..."
+                                isClearable
+                                className="text-sm"
+                            />
+                        </div>
+                        <Button onClick={openNewDialog} className="bg-blue-600 hover:bg-blue-700">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Nueva Materia
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent className="flex-1 overflow-auto p-6">
                     
@@ -139,6 +158,7 @@ export function SubjectsView() {
                                     <TableHead>Nombre de la Materia</TableHead>
                                     <TableHead>Nivel Académico</TableHead>
                                     <TableHead>Descripción</TableHead>
+                                    <TableHead>Créditos</TableHead>
                                     <TableHead className="text-right">Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -148,6 +168,7 @@ export function SubjectsView() {
                                         <TableCell className="font-medium">{subject.name}</TableCell>
                                         <TableCell><Badge variant="outline">{subject.academic_level_name}</Badge></TableCell>
                                         <TableCell className="text-slate-600 truncate max-w-xs">{subject.description || "N/A"}</TableCell>
+                                        <TableCell>{subject.creditos || 7}</TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">
                                                 <Button variant="ghost" size="icon" onClick={() => openEditDialog(subject)}>
@@ -191,6 +212,10 @@ export function SubjectsView() {
                                 placeholder="Seleccione un nivel..."
                                 required
                             />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="creditos">Créditos</Label>
+                            <Input id="creditos" name="creditos" type="number" defaultValue={editingSubject?.creditos || 7} min="1" required />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="description">Descripción (Opcional)</Label>

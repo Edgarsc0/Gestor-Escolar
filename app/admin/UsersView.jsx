@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { SuccessModal } from "@/components/custom/SuccessDialog"
 import { LoadingOverlay } from "@/components/custom/LoadingOverlay"
 import { UserProfileView } from "./UserProfileView"
+import { EmergencyContactsManager } from "@/components/custom/EmergencyContactsManager"
 
 export function UsersView({ searchQuery, onViewProfile }) {
     const [users, setUsers] = useState([])
@@ -83,8 +84,13 @@ export function UsersView({ searchQuery, onViewProfile }) {
         }
 
         if (!editingUser) {
+            const personalEmail = formData.get("personal_email")
+            if (!personalEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(personalEmail)) {
+                setErrorDialog({ isOpen: true, title: "Correo inválido", description: "El formato del correo personal es incorrecto." })
+                return
+            }
             payload.password = formData.get("password")
-            payload.personal_email = formData.get("personal_email")
+            payload.personal_email = personalEmail
         }
 
         setIsSaving(true)
@@ -106,7 +112,11 @@ export function UsersView({ searchQuery, onViewProfile }) {
                 setShowSuccessModal(true)
             } else {
                 const data = await res.json()
-                setErrorDialog({ isOpen: true, title: "Error al guardar usuario", description: data.error || "Ocurrió un error inesperado." })
+                let errorMsg = data.error || "Ocurrió un error inesperado."
+                if (errorMsg.includes("personal_email") || errorMsg.toLowerCase().includes("correo")) {
+                    errorMsg = "El correo personal ya está registrado por otro usuario."
+                }
+                setErrorDialog({ isOpen: true, title: "Error al guardar usuario", description: errorMsg })
             }
         } catch (error) {
             console.error("Error saving user:", error)
@@ -371,14 +381,22 @@ export function UsersView({ searchQuery, onViewProfile }) {
 
             {/* Create/Edit Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent>
+                <DialogContent className="max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>{editingUser ? "Editar Usuario" : "Nuevo Usuario"}</DialogTitle>
                         <DialogDescription>
                             Ingrese los datos del usuario. {!editingUser && "La contraseña se generará automáticamente."}
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleSaveUser} className="space-y-4 py-2">
+                    
+                    {editingUser ? (
+                        <Tabs defaultValue="general" className="w-full">
+                            <TabsList className="grid w-full grid-cols-2 mb-4">
+                                <TabsTrigger value="general">Datos Generales</TabsTrigger>
+                                <TabsTrigger value="contacts">Contactos de Emergencia</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="general">
+                                <form onSubmit={handleSaveUser} className="space-y-4 py-2">
                         <div className="grid gap-2">
                             <Label htmlFor="full_name">Nombre Completo</Label>
                             <Input 
@@ -457,6 +475,92 @@ export function UsersView({ searchQuery, onViewProfile }) {
                             <Button type="submit" className="bg-blue-600 hover:bg-blue-700">Guardar</Button>
                         </DialogFooter>
                     </form>
+                            </TabsContent>
+                            <TabsContent value="contacts">
+                                <EmergencyContactsManager userId={editingUser.id} />
+                            </TabsContent>
+                        </Tabs>
+                    ) : (
+                        <form onSubmit={handleSaveUser} className="space-y-4 py-2">
+                        <div className="grid gap-2">
+                            <Label htmlFor="full_name">Nombre Completo</Label>
+                            <Input 
+                                id="full_name" 
+                                name="full_name" 
+                                defaultValue={editingUser?.full_name} 
+                                onChange={handleNameChange}
+                                placeholder="Ej. Juan Pérez Gómez"
+                                required 
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="birth_date">Fecha de Nacimiento</Label>
+                                <Input 
+                                    id="birth_date" 
+                                    name="birth_date" 
+                                    type="date" 
+                                    defaultValue={editingUser?.birth_date ? new Date(editingUser.birth_date).toISOString().split('T')[0] : ''} 
+                                    required 
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="role">Rol</Label>
+                                <ReactSelect
+                                    options={roleOptions}
+                                    value={roleOptions.find(opt => opt.value === selectedRole)}
+                                    onChange={(option) => setSelectedRole(option ? option.value : "student")}
+                                    menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+                                    styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+                                    placeholder="Seleccionar rol..."
+                                />
+                                <input type="hidden" name="role" value={selectedRole} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="status">Estado</Label>
+                                <ReactSelect
+                                    options={statusOptions.filter(o => o.value !== 'all')}
+                                    value={statusOptions.find(opt => opt.value === selectedStatus)}
+                                    onChange={(option) => setSelectedStatus(option ? option.value : "active")}
+                                    menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+                                    styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+                                />
+                                <input type="hidden" name="status" value={selectedStatus} />
+                            </div>
+                        </div>
+                        {!editingUser && (
+                            <div className="grid gap-2">
+                                <Label htmlFor="personal_email">Correo Personal (para envío de credenciales)</Label>
+                                <Input 
+                                    id="personal_email" 
+                                    name="personal_email" 
+                                    type="email" 
+                                    placeholder="ejemplo@personal.com" 
+                                    required 
+                                />
+                            </div>
+                        )}
+                        {!editingUser && (
+                            <div className="grid gap-2">
+                                <Label htmlFor="password">Contraseña Generada</Label>
+                                <Input 
+                                    id="password" 
+                                    name="password" 
+                                    value={generatedPassword} 
+                                    readOnly 
+                                    className="bg-slate-100 text-slate-600 font-mono" 
+                                />
+                                <p className="text-xs text-slate-500">
+                                    Formato: 4 letras apellido paterno + 4 letras apellido materno
+                                </p>
+                            </div>
+                        )}
+                        <DialogFooter className="mt-4">
+                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+                            <Button type="submit" className="bg-blue-600 hover:bg-blue-700">Guardar</Button>
+                        </DialogFooter>
+                    </form>
+                    )}
                 </DialogContent>
             </Dialog>
 
